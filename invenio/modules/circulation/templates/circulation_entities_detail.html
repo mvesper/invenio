@@ -20,6 +20,19 @@
 
 {%- extends 'circulation_base.html' -%}
 
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "circulation.js" %}
+{% endblock %}
+
 {%- block circulation_body -%}
-    Wuhu :)
+    <div class="row">
+        <div class="col-md-10" id="entity_detail"></div>
+        <div class="col-md-2" id="entity_update">
+            <button type="button" class="btn btn-default btn-success btn-block" id="entity_update_button">UPDATE</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12" id="entity_actions"></div>
+    </div>
 {%- endblock -%}

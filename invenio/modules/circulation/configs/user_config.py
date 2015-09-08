@@ -25,12 +25,13 @@ class LoanConfig(ConfigBase):
                   waitlist=False,
                   **kwargs):
 
+        if not items:
+            raise Exception('There must be at least one item to loan.')
         for item in items:
             item.validate_run('loan',
                               item=item, user=user, library=library,
                               start_date=start_date, end_date=end_date,
-                              waitlist=waitlist,
-                              _notify=False)
+                              waitlist=waitlist)
 
 
 class RequestConfig(ConfigBase):
@@ -56,8 +57,10 @@ class RequestConfig(ConfigBase):
                   waitlist=False, deliver='pick up',
                   **kwargs):
 
+        if not items:
+            raise Exception('There must be at least one item to request.')
         for item in items:
-            item.validate_run('loan',
+            item.validate_run('request',
                               item=item, user=user, library=library,
                               start_date=start_date, end_date=end_date,
                               waitlist=waitlist,
@@ -73,8 +76,8 @@ class ReturnConfig(ConfigBase):
             item.run('return', _storage=_storage, item=item)
 
     def check_item(self, items=None, **kwargs):
-        if not items:
-            raise Exception('Items are required to loan an item')
+        for item in items:
+            item.validate_run('return', item=item, _notify=False)
 
 
 user_config = {

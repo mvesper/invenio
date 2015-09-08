@@ -5,7 +5,9 @@ from invenio.modules.circulation.configs.config_utils import DateManager
 from invenio.modules.circulation.configs.config_utils import DateException
 from invenio.modules.circulation.configs.config_utils import email_notification
 from invenio.modules.circulation.configs.config_utils import create_event
-from invenio.modules.circulation.models import CirculationLoanCycle
+from invenio.modules.circulation.models import (CirculationItem,
+                                                CirculationLoanCycle,
+                                                CirculationUser)
 
 
 class LoanConfig(ConfigBase):
@@ -44,25 +46,39 @@ class LoanConfig(ConfigBase):
 
     def check_item(self, item=None, **kwargs):
         if not item:
-            raise Exception('A item is required to loan an item')
+            raise Exception('A item is required to loan an item.')
+        if isinstance(item, (list, tuple)):
+            raise Exception('Only one item can be loaned.')
+        if not isinstance(item, CirculationItem):
+            raise Exception('The item must be of the type CirculationItem.')
 
     def check_user(self, user=None, **kwargs):
         if not user:
-            raise Exception('A user is required to loan an item')
+            raise Exception('A user is required to loan an item.')
+        if isinstance(user, (list, tuple)):
+            raise Exception('An item can only be loaned to one user.')
+        if not isinstance(user, CirculationUser):
+            raise Exception('The item must be of the type CirculationUser.')
 
     def check_library(self, library=None, **kwargs):
-        if not library:
-            raise Exception('A library is required to loan an item')
+        pass
 
     def check_loan_period(self, item=None,
                           start_date=None, end_date=None,
                           waitlist=False,
                           **kwargs):
         if start_date is None or end_date is None:
-            raise Exception('Start date and end date need to be specified')
+            raise Exception('Start date and end date need to be specified.')
+        desired_loan_period = end_date - start_date
+        if desired_loan_period.days > item.allowed_loan_period:
+            msg = ('The desired loan period ({0} days) exceeds '
+                   'the allowed period of {1} days.')
+            raise Exception(msg.format(desired_loan_period.days,
+                                       item.allowed_loan_period))
 
-
-        lcs = CirculationLoanCycle.search(item=item.uuid)
+        lcs = CirculationLoanCycle.search(item=item.id)
+        lcs = filter(lambda x: x.current_status not in ['finished', 'canceled'],
+                     lcs)
         requested_dates = [(lc.start_date, lc.end_date) for lc in lcs]
         _start, _end = DateManager.get_contained_date(start_date, end_date,
                                                       requested_dates)
@@ -77,7 +93,6 @@ class LoanConfig(ConfigBase):
                 raise DateException(DateManager
                                     .get_date_suggestions(requested_dates))
 
-
             self.blocking_clcs = [lc for lc in lcs
                                   if lc.start_date <= end_date <= lc.end_date]
         else:
@@ -87,10 +102,10 @@ class LoanConfig(ConfigBase):
 
 
 class LoseConfig(ConfigBase):
-    new_status = 'lost'
+    new_status = 'missing'
     parameters = ['item']
 
-    #@log_event('lose', ['item'])
+    # @log_event('lose', ['item'])
     def run(self, _storage,
             item=None, **kwargs):
         clcs = CirculationLoanCycle.search(item=item, current_status='on_loan')
@@ -106,6 +121,10 @@ class LoseConfig(ConfigBase):
     def check_item(self, item=None, **kwargs):
         if not item:
             raise Exception('There needs to be an item')
+        if isinstance(item, (list, tuple)):
+            raise Exception('Only one item can be lost.')
+        if not isinstance(item, CirculationItem):
+            raise Exception('The item must be of the type CirculationItem.')
 
 
 class RequestConfig(ConfigBase):
@@ -154,14 +173,21 @@ class RequestConfig(ConfigBase):
     def check_item(self, item=None, **kwargs):
         if not item:
             raise Exception('A item is required to loan an item')
+        if isinstance(item, (list, tuple)):
+            raise Exception('Only one item can be requested.')
+        if not isinstance(item, CirculationItem):
+            raise Exception('The item must be of the type CirculationItem.')
 
     def check_user(self, user=None, **kwargs):
         if not user:
             raise Exception('A user is required to loan an item')
+        if isinstance(user, (list, tuple)):
+            raise Exception('An item can only be requested to one user.')
+        if not isinstance(user, CirculationUser):
+            raise Exception('The item must be of the type CirculationUser.')
 
     def check_library(self, library=None, **kwargs):
-        if not library:
-            raise Exception('A library is required to loan an item')
+        pass
 
     def check_loan_period(self, item=None,
                           start_date=None, end_date=None,
@@ -169,8 +195,16 @@ class RequestConfig(ConfigBase):
                           **kwargs):
         if start_date is None or end_date is None:
             raise Exception('Start date and end date need to be specified')
+        desired_loan_period = end_date - start_date
+        if desired_loan_period.days > item.allowed_loan_period:
+            msg = ('The desired request period ({0} days) exceeds '
+                   'the allowed period of {1} days.')
+            raise Exception(msg.format(desired_loan_period.days,
+                                       item.allowed_loan_period))
 
-        lcs = CirculationLoanCycle.search(item=item.uuid)
+        lcs = CirculationLoanCycle.search(item=item.id)
+        lcs = filter(lambda x: x.current_status not in ['finished', 'canceled'],
+                     lcs)
         requested_dates = [(lc.start_date, lc.end_date) for lc in lcs]
         try:
             _start, _end = DateManager.get_contained_date(start_date, end_date,
@@ -204,7 +238,7 @@ class ReturnConfig(ConfigBase):
     new_status = 'on_shelf'
     parameters = ['item']
 
-    #@log_event('return', ['item'])
+    # @log_event('return', ['item'])
     def run(self, _storage,
             item=None, **kwargs):
         clc = CirculationLoanCycle.search(item=item,
@@ -217,19 +251,31 @@ class ReturnConfig(ConfigBase):
     def check_item(self, item=None, **kwargs):
         if not item:
             raise Exception('There needs to be an item')
+        if isinstance(item, (list, tuple)):
+            raise Exception('Only one item can be returned.')
+        if not isinstance(item, CirculationItem):
+            raise Exception('The item must be of the type CirculationItem.')
+        if item.current_status != 'on_loan':
+            raise Exception('The item must on loan to be returned.')
 
 
 class ReturnMissingConfig(ConfigBase):
     new_status = 'on_shelf'
     parameters = ['item']
 
-    #@log_event('return_missing', ['item'])
+    # @log_event('return_missing', ['item'])
     def run(self, _storage, item=None, **kwargs):
         create_event(_storage, 'return_missing', None, item, None, None)
 
     def check_item(self, item=None, **kwargs):
         if not item:
             raise Exception('There needs to be an item')
+        if isinstance(item, (list, tuple)):
+            raise Exception('Only one item can be returned from missing.')
+        if not isinstance(item, CirculationItem):
+            raise Exception('The item must be of the type CirculationItem.')
+        if item.current_status != 'missing':
+            raise Exception('The item must be missing to be returned')
 
 
 item_config = {

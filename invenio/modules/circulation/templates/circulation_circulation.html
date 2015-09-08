@@ -27,59 +27,61 @@
 
 {%- block circulation_body -%}
 <div id="circulation_search_result">
-    <div class="panel panel-default">
-        <div class="panel-body">
-            <input class="form-control" id="circulation_search" type="text">
-        </div>
-    </div>
+    <div class="row">
+        <div class="col-md-10">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <input class="form-control" id="circulation_search" type="text">
+                        </div>
+                    </div>
 
-    <div class="panel panel-danger" id="circulation_validation" style="display:none">
-        <div class="panel-heading">Validation</div>
-        <div class="panel-body" id="circulation_validation-body">
-            Something went wrong. Error messages coming soon :)
-        </div>
-    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">User</div>
+                        <div class="panel-body" id="circulation_user">
+                        </div>
+                    </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">User</div>
-        <div class="panel-body" id="circulation_user">
-        </div>
-    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Items</div>
+                        <div class="panel-body" id="circulation_item">
+                        </div>
+                    </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Items</div>
-        <div class="panel-body" id="circulation_item">
-        </div>
-    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Records</div>
+                        <div class="panel-body" id="circulation_record">
+                        </div>
+                    </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Library</div>
-        <div class="panel-body" id="circulation_library">
-        </div>
-    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Dates</div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input class="form-control" id="circulation_date_from" type="text">
+                                </div>
+                                <div class="col-md-6">
+                                    <input class="form-control" id="circulation_date_to" type="text">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Dates</div>
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <input class="form-control" id="circulation_date_from" type="text">
-                </div>
-                <div class="col-md-6">
-                    <input class="form-control" id="circulation_date_to" type="text">
-                </div>
-            </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Options</div>
+                        <div class="panel-body">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" class="circulation_option" id="circulation_option_waitlist">Waitlist
+                                </label>
+                            </div>
+                        </div>
+                    </div>
         </div>
-    </div>
-
-    <div class="panel panel-default">
-        <div class="panel-heading">Options</div>
-        <div class="panel-body">
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" class="circulation_option" id="circulation_option_waitlist">Waitlist
-                </label>
-            </div>
+        <div id="circulation_validation" class="col-md-2">
+            <button type="button" class="btn btn-block btn-default" id="loan_button" disabled="true">Loan</button>
+            <button type="button" class="btn btn-block btn-default" id="request_button" disabled="true">Request</button>
+            <button type="button" class="btn btn-block btn-default" id="return_button" disabled="true">Return</button>
         </div>
     </div>
 </div>

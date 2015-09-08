@@ -10,16 +10,24 @@ from invenio.modules.circulation.models import (CirculationItem,
 
 
 def create_all():
-    CirculationItem.new(id='i1',
-                        current_status='on_shelf', title='Higgs', isbn='i1')
-    CirculationItem.new(id='i2',
-                        current_status='on_shelf', title='Higgs', isbn='i2')
+    CirculationItem.new(barcode='i1', record=101,
+                        current_status='on_shelf', isbn='i1',
+                        allowed_loan_period=28)
+    CirculationItem.new(barcode='i2', record=101,
+                        current_status='on_shelf', isbn='i2',
+                        allowed_loan_period=28)
+    CirculationItem.new(barcode='i3', record=100,
+                        current_status='on_loan', isbn='i3',
+                        allowed_loan_period=28)
+    CirculationItem.new(barcode='i4', record=100,
+                        current_status='on_loan', isbn='i4',
+                        allowed_loan_period=28)
 
-    CirculationUser.new(current_status='active', id='u1',
-                        first_name='John', last_name='Doe',
+    CirculationUser.new(current_status='active', ccid='u1',
+                        name='John Doe',
                         email='martin.vesper@cern.ch')
 
-    CirculationLibrary.new(id='l1', name='Central')
+    CirculationLibrary.new(name='Central')
     CirculationMailTemplate.new(template_name='item_loan',
                                 subject='Loan confirmation',
                                 header='Dear Mr/Mrs/Ms {{ user.last_name }}',
@@ -42,12 +50,13 @@ def delete_all():
 
 def set_all():
     return (CirculationItem.get_all()[0], CirculationItem.get_all()[1],
+            CirculationItem.get_all()[2], CirculationItem.get_all()[3],
             CirculationUser.get_all()[0], CirculationLibrary.get_all()[0])
 
 
 delete_all()
 create_all()
-item1, item2, user, library = set_all()
+item1, item2, item3, item4, user, library = set_all()
 
 start_date = datetime.date.today()
 end_date = datetime.date.today() + datetime.timedelta(weeks=4)

@@ -23,9 +23,8 @@
 {%- block body -%}
     <ul class="nav nav-pills nav-justified">
         <li {% if active_nav == "circulation" %}class="active"{% endif %}><a href="/circulation">Circulation</a></li>
-        <li {% if active_nav == "tasks" %}class="active"{% endif %}><a href="/circulation/tasks">Tasks</a></li>
-        <li {% if active_nav == "statistics" %}class="active"{% endif %}><a href="/circulation/statistics">Statistics</a></li>
         <li {% if active_nav == "entities" %}class="active"{% endif %}><a href="/circulation/entities">Entities</a></li>
+        <li {% if active_nav == "lists" %}class="active"{% endif %}><a href="/circulation/lists">Lists</a></li>
     </ul>
     {%- block circulation_body -%}
     {%- endblock -%}
