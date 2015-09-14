@@ -25,8 +25,15 @@ from invenio.base.bundles import invenio as _i, jquery as _j, styles as _styles
 from invenio.ext.assets import Bundle, RequireJSFilter
 
 js = Bundle(
-    "js/circulation/init.js",
+    "js/circulation/circulation_init.js",
     output="circulation.js",
+    filters=RequireJSFilter(exclude=[_j, _i]),
+    weight=51,
+)
+
+js1 = Bundle(
+    "js/circulation/entity_init.js",
+    output="entity.js",
     filters=RequireJSFilter(exclude=[_j, _i]),
     weight=51,
 )

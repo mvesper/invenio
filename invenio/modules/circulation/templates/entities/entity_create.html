@@ -22,15 +22,14 @@
 
 {% block global_bundles %}
   {{ super() }}
-  {% bundles "circulation.js" %}
+  {% bundles "entity.js" %}
 {% endblock %}
 
 {%- block circulation_body -%}
     <div class="row">
-        <div class="col-md-10"></div>
+        <div class="col-md-10" id="entity_create"></div>
         <div class="col-md-2">
-            <button type="button" class="btn btn-default btn-success btn-block" id="entity_update">UPDATE</button>
+            <button type="button" class="btn btn-default btn-success btn-block" id="entity_create_button">CREATE</button>
         </div>
     </div>
-<textarea class="form-control" id="entities_json_editor" rows="20">{{obj}}</textarea>
 {%- endblock -%}

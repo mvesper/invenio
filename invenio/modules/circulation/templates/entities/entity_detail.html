@@ -22,7 +22,7 @@
 
 {% block global_bundles %}
   {{ super() }}
-  {% bundles "circulation.js" %}
+  {% bundles "entity.js" %}
 {% endblock %}
 
 {%- block circulation_body -%}
@@ -33,6 +33,16 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-12" id="entity_actions"></div>
+        <div class="col-md-12" id="entity_actions">
+            <ul class="list-inline">
+                {% for func in functions %}
+                    <li>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-success" id="{{func}}">{{func}}</button>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 {%- endblock -%}

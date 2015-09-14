@@ -336,11 +336,13 @@ class CirculationItem(CirculationObject, db.Model):
                             'barcode': lambda x: x['barcode'],
                             'record': lambda x: x['record'],
                             'current_status': lambda x: x['current_status'],
-                            'allowed_loan_period': lambda x: x['allowed_loan_period']}
+                            'allowed_loan_period': lambda x: x['allowed_loan_period'],
+                            'title': lambda x: x['title']}
     _json_schema = {'type': 'object',
                     'title': 'Item',
                     'properties': {
                         'id': {'type': 'integer'},
+                        'title': {'type': 'string'},
                         'isbn': {'type': 'string'},
                         'barcode': {'type': 'string'},
                         'record': {'type': 'integer'},
@@ -388,7 +390,11 @@ class CirculationUser(CirculationObject, db.Model):
     _construction_schema = {'id': lambda x: x['id'],
                             'current_status': lambda x: x['current_status'],
                             'ccid': lambda x: x['ccid'],
-                            'name': lambda x: x['name']}
+                            'name': lambda x: x['name'],
+                            'address': lambda x: x['address'],
+                            'mailbox': lambda x: x['mailbox'],
+                            'email': lambda x: x['email'],
+                            'phone': lambda x: x['phone']}
     _json_schema = {'type': 'object',
                     'title': 'User',
                     'properties': {

@@ -20,6 +20,22 @@
 
 {%- extends 'circulation_base.html' -%}
 
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "entity.js" %}
+{% endblock %}
+
 {%- block circulation_body -%}
-    Wuhu :)
+<div class="row">
+        <div class="col-md-10 form-group">
+            <input class="form-control" id="entity_search" type="text">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-default btn-success btn-block" id="entity_new">NEW</button>
+            </div>
+</div>
+<div id="entity_search_result">
+    {% block entity_search_result %}
+    {% endblock %}
+</div>
 {%- endblock -%}

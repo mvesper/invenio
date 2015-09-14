@@ -10,22 +10,23 @@ from invenio.modules.circulation.models import (CirculationItem,
 
 
 def create_all():
-    CirculationItem.new(barcode='i1', record=101,
+    CirculationItem.new(barcode='i1', record=101, title='Atlantis',
                         current_status='on_shelf', isbn='i1',
                         allowed_loan_period=28)
-    CirculationItem.new(barcode='i2', record=101,
+    CirculationItem.new(barcode='i2', record=101, title='Atlantis',
                         current_status='on_shelf', isbn='i2',
                         allowed_loan_period=28)
-    CirculationItem.new(barcode='i3', record=100,
+    CirculationItem.new(barcode='i3', record=100, title='Atlantis',
                         current_status='on_loan', isbn='i3',
                         allowed_loan_period=28)
-    CirculationItem.new(barcode='i4', record=100,
+    CirculationItem.new(barcode='i4', record=100, title='Atlantis',
                         current_status='on_loan', isbn='i4',
                         allowed_loan_period=28)
 
     CirculationUser.new(current_status='active', ccid='u1',
                         name='John Doe',
-                        email='martin.vesper@cern.ch')
+                        email='john.doe@cern.ch', phone='+41227671483',
+                        address='3 1-014', mailbox='C27800')
 
     CirculationLibrary.new(name='Central')
     CirculationMailTemplate.new(template_name='item_loan',

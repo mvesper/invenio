@@ -20,6 +20,6 @@
 require([
     'jquery',
     'js/other/jsoneditor.min',
-    'js/circulation/circulation',
+    'js/circulation/entity',
     'notify',
 ], function() {});
