@@ -59,8 +59,8 @@ def entity_hub_search(entity, search):
 def entity(entity, id):
     _, __, clazz = get_name_link_class(models.entities, entity)
 
-    funcs = [x for x in clazz.get(id).get_available_functions()
-             if x not in ['loan', 'request']]
+    # TODO
+    funcs = []
 
     return render_template('entities/entity_detail.html',
                            active_nav='entities',
@@ -90,8 +90,8 @@ def api_entity_get_functions():
 
     _, __, clazz = get_name_link_class(models.entities, data['entity'])
 
-    funcs = [x for x in clazz.get(data['id']).get_available_functions()
-             if x not in ['loan', 'request', 'return']]
+    # TODO
+    funcs = []
     res = {'data': funcs}
     return json.dumps(res)
 

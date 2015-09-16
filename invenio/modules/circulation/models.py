@@ -41,12 +41,6 @@ class CirculationPickleHandler(jsonpickle.handlers.BaseHandler):
 
     def flatten(self, obj, data):
         data['id'] = obj.id
-        """
-        for key, value in obj.__dict__.items():
-            if type(value) == sqlalchemy.orm.state.InstanceState:
-                continue
-            data[key] = value
-        """
         return data
 
     def restore(self, obj):
@@ -98,21 +92,6 @@ class CirculationObject(object):
 
         return obj
 
-        """
-        data = deepcopy(cls.query.get(id)._data)
-        _obj = cls(**jsonpickle.decode(data))
-        _obj.id = id
-
-        obj = cls()
-        for key, func in cls._construction_schema.items():
-            try:
-                obj.__setattr__(key, func(_obj))
-            except AttributeError:
-                pass
-
-        return obj
-        """
-
     @classmethod
     @session_manager
     def delete_all(cls):
@@ -160,52 +139,10 @@ class CirculationObject(object):
 
     # Circulation functions
     def get_available_functions(self):
-        return sorted(self._config[self.current_status].keys())
+        return None
 
     def get_function_parameters(self, function_name, status=None):
-        status = status if status else self.current_status
-        return self._config[status][function_name].parameters
-
-    def validate_run(self, function_name, **kwargs):
-        action_obj = self._get_action_obj(self.current_status, function_name)
-        action_obj.validate(**kwargs)
-
-    def run(self, function_name, **kwargs):
-        _save = True if '_storage' not in kwargs else False
-        _storage = kwargs.pop('_storage', [])
-
-        action_obj = self._get_action_obj(self.current_status, function_name)
-        action_obj.validate(**kwargs)
-        ret = action_obj.run(_storage=_storage, **kwargs)
-
-        try:
-            self.current_status = action_obj.new_status
-        except AttributeError:
-            pass
-
-        try:
-            for funcs, obj, func_name in self.callbacks[:]:
-                if function_name in funcs:
-                    try:
-                        res = obj.run(func_name, _storage=_storage,
-                                      _caller=self, _called=obj, **kwargs)
-                        if res == 1:
-                            break
-                    except KeyError:
-                        pass
-        except AttributeError:
-            pass
-
-        _storage.append(self)
-
-        if _save:
-            for obj in _storage:
-                obj.save()
-
-        return ret
-
-    def _get_action_obj(self, status, function_name):
-        return self._config[status][function_name]()
+        return None
 
     @classmethod
     def _encode(cls, value):
@@ -329,8 +266,6 @@ class CirculationItem(CirculationObject, db.Model):
     __tablename__ = 'circulation_item'
     id = db.Column(db.BigInteger, primary_key=True, nullable=False)
     _data = db.Column(db.LargeBinary)
-    _config = lazy_import(('invenio.modules.circulation.'
-                           'configs.item_config.item_config'))
     _construction_schema = {'id': lambda x: x['id'],
                             'isbn': lambda x: x['isbn'],
                             'barcode': lambda x: x['barcode'],
@@ -356,16 +291,15 @@ class CirculationLoanCycle(CirculationObject, db.Model):
     __tablename__ = 'circulation_loan_cycle'
     id = db.Column(db.BigInteger, primary_key=True, nullable=False)
     _data = db.Column(db.LargeBinary)
-    _config = lazy_import(('invenio.modules.circulation.'
-                           'configs.loan_cycle_config.loan_cycle_config'))
     _construction_schema = {'id': lambda x: x['id'],
                             'current_status': lambda x: x['current_status'],
                             'item': lambda x: x['item'],
-                            'library': lambda x: x['library'],
                             'user': lambda x: x['user'],
                             'start_date': lambda x: x['start_date'],
                             'end_date': lambda x: x['end_date'],
-                            'date_issued': lambda x: x['date_issued']}
+                            'desired_start_date': lambda x: x['desired_start_date'],
+                            'desired_end_date': lambda x: x['desired_end_date'],
+                            'issued_date': lambda x: x['issued_date']}
     _json_schema = {'type': 'object',
                     'title': 'User',
                     'properties': {
@@ -376,7 +310,7 @@ class CirculationLoanCycle(CirculationObject, db.Model):
                         'user': {'type': 'string'},
                         'start_date': {'type': 'string'},
                         'end_date': {'type': 'string'},
-                        'date_issued': {'type': 'string'},
+                        'issued_date': {'type': 'string'},
                         }
                    }
 
@@ -385,8 +319,6 @@ class CirculationUser(CirculationObject, db.Model):
     __tablename__ = 'circulation_user'
     id = db.Column(db.BigInteger, primary_key=True, nullable=False)
     _data = db.Column(db.LargeBinary)
-    _config = lazy_import(('invenio.modules.circulation.'
-                           'configs.user_config.user_config'))
     _construction_schema = {'id': lambda x: x['id'],
                             'current_status': lambda x: x['current_status'],
                             'ccid': lambda x: x['ccid'],
@@ -415,19 +347,6 @@ class CirculationLibrary(CirculationObject, db.Model):
                     'properties': {
                         'id': {'type': 'integer'},
                         'name': {'type': 'string'},
-                        }
-                   }
-
-
-class CirculationTask(CirculationObject, db.Model):
-    __tablename__ = 'circulation_task'
-    id = db.Column(db.BigInteger, primary_key=True, nullable=False)
-    _data = db.Column(db.LargeBinary)
-    _construction_schema = {'id': lambda x: x['id']}
-    _json_schema = {'type': 'object',
-                    'title': 'Task',
-                    'properties': {
-                        'id': {'type': 'integer'},
                         }
                    }
 
@@ -476,8 +395,6 @@ jsonpickle.handlers.registry.register(CirculationUser,
                                       CirculationPickleHandler)
 jsonpickle.handlers.registry.register(CirculationLibrary,
                                       CirculationPickleHandler)
-jsonpickle.handlers.registry.register(CirculationTask,
-                                      CirculationPickleHandler)
 jsonpickle.handlers.registry.register(CirculationEvent,
                                       CirculationPickleHandler)
 jsonpickle.handlers.registry.register(CirculationMailTemplate,
@@ -485,10 +402,9 @@ jsonpickle.handlers.registry.register(CirculationMailTemplate,
 
 # Display Name , link name, entity
 entities = [('Record', 'record', CirculationRecord),
+            ('User', 'user', CirculationUser),
             ('Item', 'item', CirculationItem),
             ('Loan Cycle', 'loan_cycle', CirculationLoanCycle),
-            ('User', 'user', CirculationUser),
             ('Library', 'library', CirculationLibrary),
-            ('Task', 'task', CirculationTask),
             ('Event', 'event', CirculationEvent),
             ('Mail Template', 'mail_template', CirculationMailTemplate)]

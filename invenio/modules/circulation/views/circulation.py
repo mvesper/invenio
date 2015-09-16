@@ -22,11 +22,13 @@
 import datetime
 import json
 
+import invenio.modules.circulation.api.circulation as api
 import invenio.modules.circulation.models as models
 
+from operator import itemgetter
 from flask import Blueprint, render_template, request, redirect
-from invenio.modules.circulation.configs.config_utils import (
-        ValidationExceptions)
+
+from invenio.modules.circulation.api.utils import ValidationExceptions
 
 
 blueprint = Blueprint('circulation', __name__, url_prefix='/circulation',
@@ -70,8 +72,17 @@ def circulation_search(search_string):
         users = [models.CirculationUser.get(x) for x in user_ids]
         records = [models.CirculationRecord.get(x) for x in record_ids]
 
-        res = circulation_try_actions(items, users, records,
+        # TODO
+        _users = users[0] if (users and len(users) == 1) else users
+        res = circulation_try_actions(items, _users, records,
                                       start_date, end_date)
+        """
+        if users and len(users) == 1:
+            res = circulation_try_actions(items, users[0], records,
+                                          start_date, end_date)
+        else:
+            res = {'loan': [], 'request': [], 'return': []}
+        """
 
         return render_template('circulation/circulation.html',
                                active_nav='circulation',
@@ -102,76 +113,58 @@ def get_circulation_state(search_string):
     return (item_ids, user_ids, record_ids, start_date, end_date, search)
 
 
-def circulation_try_actions(items, users, records, start_date, end_date):
-    res = {'loan': [], 'request': [], 'return': [],
-           'record_items': {'loan': [], 'request': []}}
+def circulation_try_actions(items, user, records, start_date, end_date):
+    res = {'loan': [], 'request': [], 'return': []}
+    funcs = {'loan': api.try_loan_items, 'request': api.try_request_items}
 
-    if users and len(users) == 1:
-        user = users[0]
-        if items:
-            for action in ['loan', 'request']:
-                try:
-                    user.validate_run(action,
-                                      user=user, items=items,
-                                      start_date=start_date, end_date=end_date)
-                    res[action].append(True)
-                except ValidationExceptions as e:
-                    res[action].extend([(ex[0], str(ex[1]))
-                                        for ex in e.exceptions])
-
-        # Do some magic for the records...
-        for record in records:
-            _res = {'loan': [], 'request': []}
-            for item in record.items:
-                for action in ['loan', 'request']:
-                    try:
-                        user.validate_run(action,
-                                          user=user, items=[item],
-                                          start_date=start_date,
-                                          end_date=end_date)
-                        _res[action].append(True)
-                        res['record_items'][action].append(item.id)
-                    except ValidationExceptions as e:
-                        _res[action].extend([(ex[0], str(ex[1]))
-                                             for ex in e.exceptions])
-
-            if True in _res['loan']:
-                res['loan'].append(True)
-            else:
-                res['loan'].extend([("general", "The item can't be loaned.")])
-            if True in _res['request']:
-                res['request'].append(True)
-            else:
-                res['request'].extend([("general",
-                                        "The item can't be requested.")])
-
-    for item in items:
+    for key, func in funcs.items():
         try:
-            item.validate_run('return', item=item)
-            res['return'].append(True)
-        except KeyError as e:
-            res['return'].extend([("general", "The item can't be returned")])
+            func(user, items, start_date, end_date)
+            res[key].append(True)
         except ValidationExceptions as e:
-            res['return'].extend([(ex[0], str(ex[1])) for ex in e.exceptions])
+            res[key].extend([(ex[0], str(ex[1])) for ex in e.exceptions])
+
+    try:
+        api.try_return_items(items)
+        res['return'].append(True)
+    except ValidationExceptions as e:
+        res['return'].extend([(ex[0], str(ex[1])) for ex in e.exceptions])
+
+    # Do some magic for the records...
+    for record in records:
+        _res = {'loan': [], 'request': []}
+        for item in record.items:
+            for key, func in funcs.items():
+                try:
+                    func(user, [item], start_date, end_date)
+                    _res[key].append(True)
+                except ValidationExceptions as e:
+                    _res[key].extend([(ex[0], str(ex[1]))
+                                      for ex in e.exceptions])
+
+        for key in funcs.keys():
+            if True in _res[key]:
+                res[key].append(True)
+            else:
+                res[key].extend([("general", "The item can't be loaned.")])
 
     def check(val):
         return map(lambda x: x is True, val)
 
-    for x in ['loan', 'request', 'return']:
-        res[x] = all(check(res[x])) if len(res[x]) > 0 else None
+    for key, value in res.items():
+        res[key] = all(check(value)) if len(value) > 0 else None
 
     return res
 
 
 def get_valid_items_from_records(action, user, records, start_date, end_date):
+    funcs = {'loan': api.try_loan_items, 'request': api.try_request_items}
+
     res = []
     for record in records:
         for item in record.items:
             try:
-                user.validate_run(action,
-                                  user=user, items=[item],
-                                  start_date=start_date,
-                                  end_date=end_date)
+                funcs[action](user, [item], start_date, end_date)
                 res.append(item)
                 break
             except Exception:
@@ -181,28 +174,27 @@ def get_valid_items_from_records(action, user, records, start_date, end_date):
 
 @blueprint.route('/api/circulation/run_action', methods=['POST'])
 def api_circulation_run_action():
+    funcs = {'loan': api.loan_items,
+             'request': api.request_items,
+             'return': api.return_items}
     data = json.loads(request.get_json())
-    action = data['action']
 
-    search_string = data['circulation_state']
+    action, search_string = itemgetter('action', 'circulation_state')(data)
+
     (item_ids, user_ids, record_ids,
      start_date, end_date, search) = get_circulation_state(search_string)
 
-    if action == 'loan' or action == 'request':
+    if action in ['loan', 'request']:
         user = models.CirculationUser.get(user_ids[0])
-        items = [models.CirculationItem.get(x) for x in item_ids]
         records = [models.CirculationRecord.get(x) for x in record_ids]
-
+        items = [models.CirculationItem.get(x) for x in item_ids]
         items += get_valid_items_from_records(action, user, records,
                                               start_date, end_date)
 
-        user.run(action,
-                 user=user, items=items,
-                 start_date=start_date, end_date=end_date)
+        funcs[action](user, items, start_date, end_date)
     elif action == 'return':
         items = [models.CirculationItem.get(x) for x in item_ids]
-        for item in items:
-            item.run('return', item=item)
+        funcs[action](items)
 
     return ('', 200)
 
