@@ -45,15 +45,15 @@ function($) {
         if (event.keyCode == 13) {
             var search_string = $('#entity_search').val();
             var url_encode = encodeURIComponent(search_string);
-            var entity = get_entity_from_url();
+            var entity = $(this).attr('data-entity'); 
 
-            window.location.href = '/circulation/entities/'+entity+'/search/'+url_encode;
+            window.location.href = '/circulation/entities/action/search/'+entity+'/'+url_encode;
         }
     });
 
     $('#entity_new').on("click", function(event){
-        var entity = get_entity_from_url();
-        window.location.href = '/circulation/entities/'+entity+'/create/';
+        var entity = $(this).attr('data-entity');
+        window.location.href = '/circulation/entities/action/create/'+entity;
     });
 
     var json_editor = null;
@@ -63,7 +63,7 @@ function($) {
             return;
         }
 
-        var entity = get_entity_from_url();
+        var entity = $('#entity_create').attr('data-entity');
 
         function start_json_editor(data) {
             var data = JSON.parse(data);
@@ -87,7 +87,7 @@ function($) {
     });
 
     $('#entity_create_button').on("click", function(event){
-        var entity = get_entity_from_url();
+        var entity = $(this).attr('data-entity');
         var json = json_editor.getValue();
 
         var search_body = {'entity': entity, 'data': json}
@@ -165,7 +165,7 @@ function($) {
         var func = event.target.id;
 
         function yay(data) {
-            alert('yay');
+            $.notify('Success', 'success');
         }
 
         $.ajax({
@@ -179,7 +179,7 @@ function($) {
     
 
     $('#entity_search_result').on("click", ".entity_delete", function(event){
-        var entity = get_entity_from_url();
+        var entity = $('#entity_search_result').attr('data-entity');
         var id = event.target.id.split('_')[1];
         var element = $('#'+entity+'_'+id);
         $.notify.addStyle('confirm_deletion', {

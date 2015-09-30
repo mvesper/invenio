@@ -27,15 +27,23 @@
 
 {%- block circulation_body -%}
     <div class="row">
-        <div class="col-md-10 form-group">
-            <input class="form-control" id="entity_search" type="text" data-entity="{{entity}}">
-        </div>
-        <div class="col-md-2">
-            <button type="button" class="btn btn-default btn-success btn-block" id="entity_new" data-entity="{{entity}}">NEW</button>
+        <div class="col-md-10" id="entity_detail"></div>
+        <div class="col-md-2" id="entity_update">
+            <button type="button" class="btn btn-default btn-success btn-block" id="entity_update_button">UPDATE</button>
         </div>
     </div>
-    <div id="entity_search_result" data-entity="{{entity}}">
-        {% block entity_search_result %}
-        {% endblock %}
+
+    <div class="row">
+        <div class="col-md-12" id="entity_actions">
+            <ul class="list-inline">
+                {% for func in aggregated.functions %}
+                    <li>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-success" id="{{func}}">{{func}}</button>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 {%- endblock -%}

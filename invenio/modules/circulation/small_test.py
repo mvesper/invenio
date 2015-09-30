@@ -3,61 +3,69 @@ import datetime
 from invenio.modules.circulation.models import (CirculationItem,
                                                 CirculationLoanCycle,
                                                 CirculationUser,
-                                                CirculationLibrary,
-                                                CirculationTask,
+                                                CirculationLocation,
                                                 CirculationEvent,
-                                                CirculationMailTemplate)
+                                                CirculationMailTemplate,
+                                                CirculationLoanRule)
 
 
 def create_all():
-    CirculationItem.new(barcode='i1', record=101, title='Atlantis',
-                        current_status='on_shelf', isbn='i1',
-                        allowed_loan_period=28)
-    CirculationItem.new(barcode='i2', record=101, title='Atlantis',
-                        current_status='on_shelf', isbn='i2',
-                        allowed_loan_period=28)
-    CirculationItem.new(barcode='i3', record=100, title='Atlantis',
-                        current_status='on_loan', isbn='i3',
-                        allowed_loan_period=28)
-    CirculationItem.new(barcode='i4', record=100, title='Atlantis',
-                        current_status='on_loan', isbn='i4',
-                        allowed_loan_period=28)
+    clo = CirculationLocation.new(code='ccl', name='CERN central library')
 
-    CirculationUser.new(current_status='active', ccid='u1',
-                        name='John Doe',
-                        email='john.doe@cern.ch', phone='+41227671483',
-                        address='3 1-014', mailbox='C27800')
+    cl1 = CirculationItem.new(record_id=100,
+                              location = clo,
+                              barcode='i1', isbn='i1', collection='books',
+                              current_status='on_shelf',
+                              item_group=CirculationItem.GROUP_BOOK)
+    cl2 = CirculationItem.new(record_id=31,
+                              location = clo,
+                              barcode='i2', isbn='i2', collection='books',
+                              current_status='on_shelf',
+                              item_group=CirculationItem.GROUP_BOOK)
 
-    CirculationLibrary.new(name='Central')
+    cu = CirculationUser.new(current_status='active', ccid='u1',
+                             invenio_user_id=1,
+                             name='John Doe',
+                             email='john.doe@cern.ch', phone='+41227671483',
+                             address='3 1-014', mailbox='C27800',
+                             user_group=CirculationUser.GROUP_DEFAULT)
+
     CirculationMailTemplate.new(template_name='item_loan',
                                 subject='Loan confirmation',
-                                header='Dear Mr/Mrs/Ms {{ user.last_name }}',
-                                content=('\nYou successfully loaned the '
+                                header='Dear Mr/Mrs/Ms {{name}}',
+                                content=('\nYou successfully {{action}} the '
                                          'following item(s)\n'
                                          '{% for item in items %}'
-                                         '\t{{ item.title }}\n'
+                                         '\t{{item}}\n'
                                          '{% endfor %}'))
+
+    CirculationLoanRule.new(item_group=CirculationItem.GROUP_BOOK,
+                            user_group=CirculationUser.GROUP_DEFAULT,
+                            location_code='ccl',
+                            loan_period=28)
 
 
 def delete_all():
     CirculationItem.delete_all()
     CirculationUser.delete_all()
-    CirculationLibrary.delete_all()
+    CirculationLocation.delete_all()
     CirculationLoanCycle.delete_all()
     CirculationEvent.delete_all()
-    CirculationTask.delete_all()
     CirculationMailTemplate.delete_all()
+    CirculationLoanRule.delete_all()
 
 
+"""
 def set_all():
     return (CirculationItem.get_all()[0], CirculationItem.get_all()[1],
             CirculationItem.get_all()[2], CirculationItem.get_all()[3],
-            CirculationUser.get_all()[0], CirculationLibrary.get_all()[0])
+            CirculationUser.get_all()[0], CirculationLocation.get_all()[0])
+"""
 
 
 delete_all()
 create_all()
-item1, item2, item3, item4, user, library = set_all()
+#item1, item2, item3, item4, user, library = set_all()
 
 start_date = datetime.date.today()
 end_date = datetime.date.today() + datetime.timedelta(weeks=4)

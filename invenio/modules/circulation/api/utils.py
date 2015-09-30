@@ -1,6 +1,59 @@
 import datetime
 
+from jinja2 import Template
 from itertools import starmap
+
+from invenio.ext.email import send_email
+from invenio.modules.circulation.models import (CirculationEvent,
+                                                CirculationMailTemplate,
+                                                CirculationLoanRule)
+
+
+def update(obj, **kwargs):
+    current_items = {key: obj.__getattribute__(key) for key in dir(obj)
+                     if not callable(obj.__getattribute__(key)) and not
+                     key.startswith("__")}
+
+    changed = {}
+
+    for key, value in kwargs.items():
+        if value != current_items[key]:
+            try:
+                obj.__setattr__(key, value)
+            except Exception:
+                pass
+            changed[key] = value
+
+    if changed:
+        obj.save()
+
+    return current_items, changed
+
+
+def email_notification(template_name, sender, receiver, **kwargs):
+    try:
+        cmt = CirculationMailTemplate.search(template_name=template_name)[0]
+    except IndexError:
+        return
+
+    subject = Template(cmt.subject).render(**kwargs)
+    header = Template(cmt.header).render(**kwargs)
+    content = Template(cmt.content).render(**kwargs)
+
+    send_email(sender, receiver,
+               subject=subject,
+               header=header,
+               content=content)
+
+
+def get_loan_period(user, item):
+    try:
+        clr = CirculationLoanRule.search(user_group=user.user_group,
+                                          item_group=item.item_group,
+                                          location_code=item.location.code)[0]
+        return clr.loan_period
+    except IndexError:
+        return 0
 
 
 class DateException(Exception):

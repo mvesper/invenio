@@ -3,11 +3,15 @@ import datetime
 
 from invenio.modules.circulation.models import (CirculationUser,
                                                 CirculationItem,
-                                                CirculationLoanCycle)
+                                                CirculationLoanCycle,
+                                                CirculationEvent)
 from invenio.modules.circulation.api.utils import (DateManager,
                                                    DateException,
-                                                   ValidationExceptions)
-from invenio.modules.circulation.api.loan_cycle import finish_clcs
+                                                   ValidationExceptions,
+                                                   email_notification,
+                                                   get_loan_period)
+#from invenio.modules.circulation.api.loan_cycle import finish_clcs 
+from invenio.modules.circulation.api.event import create as create_event
 
 
 def _check_user(user):
@@ -38,11 +42,8 @@ def _check_start_end_date(start_date, end_date):
 
 
 def _check_loan_duration(user, items, start_date, end_date):
-    def _get_allowed_loan_period(user, items):
-        # TODO
-        return 28
     desired_loan_period = end_date - start_date
-    allowed_loan_period = _get_allowed_loan_period(user, items)
+    allowed_loan_period = get_loan_period(user, items)
     if desired_loan_period.days > allowed_loan_period:
         msg = ('The desired loan period ({0} days) exceeds '
                'the allowed period of {1} days.')
@@ -134,14 +135,20 @@ def loan_items(user, items, start_date, end_date, waitlist=False):
     for item in items:
         item.current_status = 'on_loan'
         item.save()
-        CirculationLoanCycle.new(current_status='on_loan',
-                                 item=item, user=user,
-                                 start_date=start_date,
-                                 end_date=end_date,
-                                 desired_start_date=desired_start_date,
-                                 desired_end_date=desired_end_date,
-                                 issued_date=datetime.datetime.now(),
-                                 group_uuid=group_uuid)
+        clc = CirculationLoanCycle.new(current_status='on_loan',
+                                       item=item, user=user,
+                                       start_date=start_date,
+                                       end_date=end_date,
+                                       desired_start_date=desired_start_date,
+                                       desired_end_date=desired_end_date,
+                                       issued_date=datetime.datetime.now(),
+                                       group_uuid=group_uuid)
+        create_event(user=user, item=item, loan_cycle=clc,
+                     event=CirculationEvent.EVENT_CLC_CREATED_LOAN)
+
+    email_notification('item_loan', 'john.doe@cern.ch', user.email,
+                       name=user.name, action='loaned',
+                       items=[x.record.title for x in items])
 
 
 def try_request_items(user, items, start_date, end_date, waitlist=False):
@@ -185,14 +192,21 @@ def request_items(user, items, start_date, end_date, waitlist=False):
     group_uuid = str(uuid.uuid4())
     for item in items:
         item.current_status = 'on_loan'
-        CirculationLoanCycle.new(current_status='requested',
-                                 item=item, user=user,
-                                 start_date=start_date,
-                                 end_date=end_date,
-                                 desired_start_date=desired_start_date,
-                                 desired_end_date=desired_end_date,
-                                 issued_date=datetime.datetime.now(),
-                                 group_uuid=group_uuid)
+        item.save()
+        clc = CirculationLoanCycle.new(current_status='requested',
+                                       item=item, user=user,
+                                       start_date=start_date,
+                                       end_date=end_date,
+                                       desired_start_date=desired_start_date,
+                                       desired_end_date=desired_end_date,
+                                       issued_date=datetime.datetime.now(),
+                                       group_uuid=group_uuid)
+        create_event(user=user, item=item, loan_cycle=clc,
+                     event=CirculationEvent.EVENT_CLC_CREATED_REQUEST)
+
+    email_notification('item_loan', 'john.doe@cern.ch', user.email,
+                       name=user.name, action='requested',
+                       items=[x.record.title for x in items])
 
 
 def try_return_items(items):
@@ -217,4 +231,9 @@ def return_items(items):
         item.save()
         clc = CirculationLoanCycle.search(item=item,
                                           current_status='on_loan')[0]
-        finish_clcs([clc])
+        clc.current_status = 'finished'
+        clc.save()
+        user = clc.user
+        create_event(user=user, item=item, loan_cycle=clc,
+                     event=CirculationEvent.EVENT_CLC_FINISHED)
+        #finish_clcs([clc])

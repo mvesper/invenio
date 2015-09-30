@@ -56,8 +56,10 @@ def circulation_search(search_string):
      start_date, end_date, search) = get_circulation_state(search_string)
 
     if search:
-        item_ids += [x.id for x in models.CirculationItem.search(**search)]
-        user_ids += [x.id for x in models.CirculationUser.search(**search)]
+        item_ids += [str(x.id) for x in
+                     models.CirculationItem.search(**search)]
+        user_ids += [str(x.id) for x in
+                     models.CirculationUser.search(**search)]
         record_ids += [str(x.id) for x
                        in models.CirculationRecord.search(**search)]
 
@@ -72,10 +74,15 @@ def circulation_search(search_string):
         users = [models.CirculationUser.get(x) for x in user_ids]
         records = [models.CirculationRecord.get(x) for x in record_ids]
 
+        for record in records:
+            # TODO: kinda ugly to get the items like that
+            record.items = models.CirculationItem.search(record_id=record.id)
+
         # TODO
         _users = users[0] if (users and len(users) == 1) else users
         res = circulation_try_actions(items, _users, records,
                                       start_date, end_date)
+
         """
         if users and len(users) == 1:
             res = circulation_try_actions(items, users[0], records,
@@ -94,7 +101,7 @@ def circulation_search(search_string):
 
 
 def get_circulation_state(search_string):
-    # <item_ids>-<user_ids>-<record_ids>-<s_date>-<e_date>-<search_string>
+    # <item_ids>:<user_ids>:<record_ids>:<s_date>:<e_date>:<search_string>
     (item_ids, user_ids, record_ids,
      start_date, end_date, search) = search_string.split(':', 5)
 
@@ -117,18 +124,19 @@ def circulation_try_actions(items, user, records, start_date, end_date):
     res = {'loan': [], 'request': [], 'return': []}
     funcs = {'loan': api.try_loan_items, 'request': api.try_request_items}
 
-    for key, func in funcs.items():
-        try:
-            func(user, items, start_date, end_date)
-            res[key].append(True)
-        except ValidationExceptions as e:
-            res[key].extend([(ex[0], str(ex[1])) for ex in e.exceptions])
+    if items:
+        for key, func in funcs.items():
+            try:
+                func(user, items, start_date, end_date)
+                res[key].append(True)
+            except ValidationExceptions as e:
+                res[key].extend([(ex[0], str(ex[1])) for ex in e.exceptions])
 
-    try:
-        api.try_return_items(items)
-        res['return'].append(True)
-    except ValidationExceptions as e:
-        res['return'].extend([(ex[0], str(ex[1])) for ex in e.exceptions])
+        try:
+            api.try_return_items(items)
+            res['return'].append(True)
+        except ValidationExceptions as e:
+            res['return'].extend([(ex[0], str(ex[1])) for ex in e.exceptions])
 
     # Do some magic for the records...
     for record in records:

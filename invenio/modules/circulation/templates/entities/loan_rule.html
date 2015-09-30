@@ -1,4 +1,3 @@
-
 {# -*- coding: utf-8 -*-
 #
 # This file is part of Invenio.
@@ -23,11 +22,11 @@
 
 {%- block entity_search_result -%}
 {% for entity in entities %}
-    <div class="panel panel-default" id="event_{{entity.id}}">
+    <div class="panel panel-default" id="loan_rule_{{entity.id}}">
         <div class="panel-heading">
             <div class="row">
                 <div class="col-md-10">
-                    <a href="/circulation/entities/event/{{entity.id}}">{{entity.id}}</a>
+                    <a href="/circulation/entities/loan_rule/{{entity.id}}">{{entity.id}}</a>
                 </div>
                 <div class="col-md-2">
                     <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_{{entity.id}}">Delete</button>
@@ -36,8 +35,20 @@
         </div>
         <div class="panel-body">
             <div class="row">
-                <div class="col-md-2">Event</div>
-                <div class="col-md-10">{{entity.event}}</div>
+                <div class="col-md-2">Item Group</div>
+                <div class="col-md-10">{{entity.item_group}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">User Group</div>
+                <div class="col-md-10">{{entity.user_group}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">Location Code</div>
+                <div class="col-md-10">{{entity.location_code}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">Loan Period</div>
+                <div class="col-md-10">{{entity.loan_period}}</div>
             </div>
         </div>
     </div>
