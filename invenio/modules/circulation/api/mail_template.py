@@ -1,0 +1,31 @@
+from invenio.modules.circulation.models import (CirculationMailTemplate,
+                                                CirculationEvent)
+from invenio.modules.circulation.api.event import create as create_event
+from invenio.modules.circulation.api.utils import update as _update
+
+
+def create(template_name, subject, header, content):
+    cmt = CirculationMailTemplate.new(template_name=template_name,
+                                      subject=subject, header=header,
+                                      content=content)
+
+    create_event(mail_template=cmt, event=CirculationEvent.EVENT_MT_CREATE)
+
+
+def update(cmt, **kwargs):
+    current_items, changed = _update(cmt, **kwargs)
+    if changed:
+        changes_str = ['{0}: {1} -> {2}'.format(key,
+                                                current_items[key],
+                                                changed[key])
+                       for key in changed]
+        create_event(mail_template=cmt, event=CirculationEvent.EVENT_MT_CHANGE,
+                     description=', '.join(changes_str))
+
+
+def delete(cmt):
+    create_event(mail_template=cmt, event=CirculationEvent.EVENT_MT_DELETE)
+    cmt.delete()
+
+
+schema = {}

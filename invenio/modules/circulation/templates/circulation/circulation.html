@@ -1,0 +1,208 @@
+{# -*- coding: utf-8 -*-
+#
+# This file is part of Invenio.
+# Copyright (C) 2015 CERN.
+#
+# Invenio is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# Invenio is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Invenio; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+
+{%- extends 'circulation_base.html' -%}
+
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "circulation.js", "circulation.css" %}
+{% endblock %}
+
+{%- block circulation_body -%}
+<div id="circulation_search_result">
+    <div class="row">
+        <div class="col-md-10">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <input class="form-control" id="circulation_search" type="text">
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading">User</div>
+                        <div class="panel-body" id="circulation_user">
+                            {% for user in users %}
+                            <div class="panel panel-default" id="user_{{user.id}}">
+                                <div class="panel-heading">
+                                    <div class="row">
+                                        <div class="col-md-10">
+                                            <a href="/circulation/entities/user/{{user.id}}">{{user.id}}</a>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_user_{{user.id}}">Remove</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-md-2">CCID</div>
+                                        <div class="col-md-10">{{user.ccid}}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-2">Name</div>
+                                        <div class="col-md-10">{{user.name}}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-2">Address</div>
+                                        <div class="col-md-10">{{user.address}}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-2">Mailbox</div>
+                                        <div class="col-md-10">{{user.mailbox}}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-2">Email</div>
+                                        <div class="col-md-10">{{user.email}}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-2">Phone</div>
+                                        <div class="col-md-10">{{user.phone}}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Items</div>
+                        <div class="panel-body" id="circulation_item">
+                            <ul class="list-inline">
+                            {% for item in items %}
+                                <li>
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <div class="btn-group" role="group">
+                                                <a class="btn btn-default" href="/circulation/entities/item/{{item.id}}" role="button">{{item.id}}</a>
+                                                <button type="button" class="btn btn-danger entity_delete" id="delete_item_{{item.id}}">Remove</button>
+                                                </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div class="col-md-12" style="max-width:200px"><b>{{item.record.title}}</b></div>
+                                                <div class="col-md-12">{{item.barcode}}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Records</div>
+                        <div class="panel-body" id="circulation_record">
+                            {% for record in records %}
+                                <div class="panel panel-default" id="record_{{record.id}}">
+                                    <div class="panel-heading">
+                                        <div class="row">
+                                            <div class="col-md-10">
+                                                <a href="/circulation/entities/record/{{record.id}}">{{record.id}}</a>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_record_{{record.id}}">Remove</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="row">
+                                            <div class="col-md-2">Title</div>
+                                            <div class="col-md-10">{{record.title}}</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-2">Authors</div>
+                                            <div class="col-md-10">
+                                                <ul class="list-unstyled"> 
+                                                    {% for author in record.authors %}
+                                                        <li>{{author.name}}</li> 
+                                                    {% endfor %}
+                                                <ul>
+                                            </div>
+                                            <div class="col-md-2">Items</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-10">
+                                                <ul class="list-inline">
+                                                    {% for item in record.items %}
+                                                        <li><a class="btn btn-default" href="/circulation/entities/item/{{item.id}}" role="button">{{item.id}}</a></li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Dates</div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input class="form-control" id="circulation_date_from" type="text" value="{{start_date}}">
+                                </div>
+                                <div class="col-md-6">
+                                    <input class="form-control" id="circulation_date_to" type="text" value="{{end_date}}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Options</div>
+                        <div class="panel-body">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" class="circulation_option" id="circulation_option_waitlist">Waitlist
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+        </div>
+        <div id="circulation_validation" class="col-md-2">
+            {% if loan is none %}
+                <button type="button" class="btn btn-block btn-default" id="loan_button" disabled="true">Loan</button>
+            {% elif loan %}
+                <button type="button" class="btn btn-block btn-success" id="loan_button">Loan</button>
+            {% else %}
+                <button type="button" class="btn btn-block btn-danger" id="loan_button" disabled="true">Loan</button>
+            {% endif %}
+
+            {% if request is none %}
+                <button type="button" class="btn btn-block btn-default" id="request_button" disabled="true">Request</button>
+            {% elif request %}
+                <button type="button" class="btn btn-block btn-success" id="request_button">Request</button>
+            {% else %}
+                <button type="button" class="btn btn-block btn-danger" id="request_button" disabled="true">Request</button>
+            {% endif %}
+
+            {% if ret is none %}
+                <button type="button" class="btn btn-block btn-default" id="return_button" disabled="true">Return</button>
+            {% elif ret %}
+                <button type="button" class="btn btn-block btn-success" id="return_button">Return</button>
+            {% else %}
+                <button type="button" class="btn btn-block btn-danger" id="return_button" disabled="true">Return</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{%- endblock -%}

@@ -1,0 +1,112 @@
+{# -*- coding: utf-8 -*-
+#
+# This file is part of Invenio.
+# Copyright (C) 2015 CERN.
+#
+# Invenio is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# Invenio is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Invenio; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+
+{%- extends 'circulation_base.html' -%}
+{% from 'entities/macros.html' import test %}
+
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "entity.js" %}
+{% endblock %}
+
+{%- block circulation_body -%}
+    <div class="row">
+        <div class="col-md-10" id="entity_detail"></div>
+        <div class="col-md-2" id="entity_update">
+            <button type="button" class="btn btn-default btn-success btn-block" id="entity_update_button">UPDATE</button>
+        </div>
+    </div>
+
+    <h3>Functions</h3>
+    <div class="row">
+        <div class="col-md-12" id="entity_actions">
+            <ul class="list-unstyled">
+                {% for func in aggregated.functions %}
+                    <li>
+                        <div class="input-group">
+                            <span class="input-group-btn">
+                                {% if func.success %}
+                                    <button type="button" class="btn btn-success" id="{{func.name}}">{{func.name}}</button>
+                                {% else %}
+                                    <button type="button" class="btn btn-danger" id="{{func.name}}" disabled>{{func.name}}</button>
+                                {% endif %}
+                            </span>
+                            {% for param_name, type in func.params %}
+                            <input type="text" class="form-control {{func.name}}" placeholder="{{param_name}}">
+                            {% endfor %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <h3>Record</h3>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default" id="record_{{aggregated.additions.record.id}}">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <a href="/circulation/entities/record/{{aggregated.additions.record.id}}">{{aggregated.additions.record.id}}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-2">Title</div>
+                        <div class="col-md-10">{{aggregated.additions.record.title}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Loan Cycles</h3>
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="list-inline">
+                {% for lc in aggregated.additions.loan_cycles %}
+                    <li>
+                        <div class="panel panel-default" id="loan_cycle_{{lc.id}}">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <a href="/circulation/entities/loan_cycle/{{lc.id}}">{{lc.id}}</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-6">User</div>
+                                    <div class="col-md-6">{{lc.user.name}}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">Status</div>
+                                    <div class="col-md-6">{{lc.user.current_status}}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{%- endblock -%}

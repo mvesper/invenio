@@ -1,0 +1,54 @@
+{# -*- coding: utf-8 -*-
+#
+# This file is part of Invenio.
+# Copyright (C) 2015 CERN.
+#
+# Invenio is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# Invenio is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Invenio; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+
+{%- extends 'circulation_base.html' -%}
+
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "entity.js" %}
+{% endblock %}
+
+{%- block circulation_body -%}
+    <div class="row">
+        <div class="col-md-10" id="entity_detail"></div>
+        <div class="col-md-2" id="entity_update">
+            <button type="button" class="btn btn-default btn-success btn-block" id="entity_update_button">UPDATE</button>
+        </div>
+    </div>
+
+    <h3>Functions</h3>
+    <div class="row">
+        <div class="col-md-12" id="entity_actions">
+            <ul class="list-inline">
+                {% for func in aggregated.functions %}
+                    <li>
+                        <div class="btn-group" role="group">
+                            {% if func.success %}
+                                <button type="button" class="btn btn-success" id="{{func.name}}">{{func.name}}</button>
+                            {% else %}
+                                <button type="button" class="btn btn-danger" id="{{func.name}}">{{func.name}}</button>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{%- endblock -%}
