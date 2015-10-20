@@ -38,6 +38,14 @@ js1 = Bundle(
     weight=51,
 )
 
+
+js2 = Bundle(
+    "js/circulation/user_init.js",
+    output="user.js",
+    filters=RequireJSFilter(exclude=[_j, _i]),
+    weight=51,
+)
+
 styles = Bundle(
     "vendors/jquery-ui/themes/redmond/jquery-ui.css",
     output="circulation.css",

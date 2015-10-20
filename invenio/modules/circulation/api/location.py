@@ -7,6 +7,7 @@ from invenio.modules.circulation.api.utils import update as _update
 def create(code, name, notes):
     cl = CirculationLocation.new(code=code, name=name, notes=notes)
     create_event(location=cl, event=CirculationEvent.EVENT_LOCATION_CREATE)
+    return cl
 
 
 def update(cl, **kwargs):

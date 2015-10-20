@@ -26,7 +26,7 @@
         <div class="panel-heading">
             <div class="row">
                 <div class="col-md-10">
-                    <a href="/circulation/entities/record/{{entity.id}}">{{id}}</a>
+                    <a href="/circulation/entities/record/{{entity.id}}">{{entity.id}}</a>
                 </div>
                 <div class="col-md-2">
                     <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_{{entity.id}}">Remove</button>
@@ -42,8 +42,8 @@
                 <div class="col-md-2">Authors</div>
                 <div class="col-md-10">
                     <ul class="list-unstyled"> 
-                        {% for author in authors %}
-                            <li>{{author.name}}</li> 
+                        {% for author in entity.authors %}
+                            <li>{{author}}</li> 
                         {% endfor %}
                     <ul>
                 </div>

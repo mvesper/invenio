@@ -13,6 +13,8 @@ def create(invenio_user_id, ccid, name, address, mailbox, email, phone,
 
     create_event(user=cu, event=CirculationEvent.EVENT_USER_CREATE)
 
+    return cu
+
 
 def update(cu, **kwargs):
     current_items, changed = _update(cu, **kwargs)

@@ -26,7 +26,7 @@ import invenio.modules.circulation.api.circulation as api
 import invenio.modules.circulation.models as models
 
 from operator import itemgetter
-from flask import Blueprint, render_template, request, redirect
+from flask import Blueprint, render_template, request, redirect, flash
 
 from invenio.modules.circulation.api.utils import ValidationExceptions
 
@@ -200,10 +200,15 @@ def api_circulation_run_action():
                                               start_date, end_date)
 
         funcs[action](user, items, start_date, end_date)
+        msg = 'The item(s): {0} were successfully loaned to the user: {1}.'
+        msg = msg.format(', '.join(x.barcode for x in items), user.ccid)
     elif action == 'return':
         items = [models.CirculationItem.get(x) for x in item_ids]
         funcs[action](items)
+        msg = 'The item(s): {0} where successfully returned.'
+        msg = msg.format(', '.join(x.barcode for x in items))
 
+    flash(msg)
     return ('', 200)
 
 

@@ -9,8 +9,9 @@ from invenio.modules.circulation.api.utils import (DateManager,
                                                    DateException,
                                                    ValidationExceptions,
                                                    email_notification,
-                                                   get_loan_period)
-#from invenio.modules.circulation.api.loan_cycle import finish_clcs 
+                                                   get_loan_period,
+                                                   check_field_in)
+from invenio.modules.circulation.api.loan_cycle import update_waitlist
 from invenio.modules.circulation.api.event import create as create_event
 
 
@@ -23,17 +24,13 @@ def _check_user(user):
         raise Exception('The item must be of the type CirculationUser.')
 
 
-def _check_item(items, status=None):
+def _check_items(items):
     if not items:
         raise Exception('A item is required to loan an item.')
     if not isinstance(items, (list, tuple)):
         raise Exception('Items must be a list or tuple.')
     if not all(map(lambda x: isinstance(x, CirculationItem), items)):
         raise Exception('The items must be of the type CirculationItem.')
-    if status:
-        if not all(map(lambda x: x.current_status == status, items)):
-            raise Exception('The items must have the status {0}.'
-                            .format(status))
 
 
 def _check_start_end_date(start_date, end_date):
@@ -54,7 +51,9 @@ def _check_loan_duration(user, items, start_date, end_date):
 def _get_affected_loan_cycles(statuses, items):
     def filter_func(x):
         return x.current_status not in statuses
-    clc_list = [CirculationLoanCycle.search(item=item.id) for item in items]
+    #clc_list = [CirculationLoanCycle.search(item=item.id) for item in items]
+    clc_list = [CirculationLoanCycle.search('item:{0}'.format(item.id))
+                for item in items]
     clc_list = [item for sub_list in clc_list for item in sub_list]
     return filter(filter_func, clc_list)
 
@@ -67,6 +66,12 @@ def _check_loan_start(start_date):
     if start_date != datetime.date.today():
         raise Exception('For a loan, the start date must be today.')
 
+
+def _check_request_start(start_date):
+    if start_date < datetime.date.today():
+        raise Exception('To request, the start date must be today or later.')
+
+
 def _check_loan_period(user, items, start_date, end_date):
     lcs = _get_affected_loan_cycles(['finished', 'canceled'], items)
     requested_dates = _get_requested_dates(lcs)
@@ -78,7 +83,9 @@ def _check_loan_period(user, items, start_date, end_date):
     available_end_date = _end
     desired_end_date = end_date
 
-    if available_start_date != desired_start_date or available_end_date != desired_end_date:
+    avd_start_date = available_start_date != desired_start_date
+    avd_end_date = available_end_date != desired_end_date
+    if avd_start_date or avd_end_date:
         suggested_dates = DateManager.get_date_suggestions(requested_dates)
         contained_dates = (_start, _end)
         raise DateException(suggested_dates=suggested_dates,
@@ -88,9 +95,16 @@ def _check_loan_period(user, items, start_date, end_date):
 def try_loan_items(user, items, start_date, end_date, waitlist=False):
     exceptions = []
     try:
-        _check_item(items, 'on_shelf')
+        _check_items(items)
     except Exception as e:
         exceptions.append(('items', e))
+
+    try:
+        check_field_in('current_status',
+                       [CirculationItem.STATUS_ON_SHELF],
+                       'The item is in the wrong status')(objs=items)
+    except Exception as e:
+        exceptions.append(('items_status', e))
 
     try:
         _check_user(user)
@@ -101,6 +115,11 @@ def try_loan_items(user, items, start_date, end_date, waitlist=False):
         _check_loan_start(start_date)
     except Exception as e:
         exceptions.append(('start_date', e))
+
+    try:
+        _check_loan_duration(user, items, start_date, end_date)
+    except Exception as e:
+        exceptions.append(('duration', e))
 
     try:
         _check_loan_period(user, items, start_date, end_date)
@@ -126,16 +145,18 @@ def loan_items(user, items, start_date, end_date, waitlist=False):
             start_date = _start
             end_date = _end
             # TODO: Do some loan specific checks here...
-            if _start != desired_start:
+            if _start != desired_start_date:
                 raise e
         else:
             raise e
 
     group_uuid = str(uuid.uuid4())
+    res = []
     for item in items:
-        item.current_status = 'on_loan'
+        item.current_status = CirculationItem.STATUS_ON_LOAN
         item.save()
-        clc = CirculationLoanCycle.new(current_status='on_loan',
+        current_status = CirculationLoanCycle.STATUS_ON_LOAN
+        clc = CirculationLoanCycle.new(current_status=current_status,
                                        item=item, user=user,
                                        start_date=start_date,
                                        end_date=end_date,
@@ -143,6 +164,8 @@ def loan_items(user, items, start_date, end_date, waitlist=False):
                                        desired_end_date=desired_end_date,
                                        issued_date=datetime.datetime.now(),
                                        group_uuid=group_uuid)
+        res.append(clc)
+
         create_event(user=user, item=item, loan_cycle=clc,
                      event=CirculationEvent.EVENT_CLC_CREATED_LOAN)
 
@@ -150,18 +173,38 @@ def loan_items(user, items, start_date, end_date, waitlist=False):
                        name=user.name, action='loaned',
                        items=[x.record.title for x in items])
 
+    return res
+
 
 def try_request_items(user, items, start_date, end_date, waitlist=False):
     exceptions = []
     try:
-        _check_item(items)
+        _check_items(items)
     except Exception as e:
         exceptions.append(('items', e))
+
+    try:
+        check_field_in('current_status',
+                       [CirculationItem.STATUS_ON_SHELF,
+                        CirculationItem.STATUS_ON_LOAN],
+                       'The item is in the wrong status')(objs=items)
+    except Exception as e:
+        exceptions.append(('items_status', e))
 
     try:
         _check_user(user)
     except Exception as e:
         exceptions.append(('user', e))
+
+    try:
+        _check_request_start(start_date)
+    except Exception as e:
+        exceptions.append(('start_date', e))
+
+    try:
+        _check_loan_duration(user, items, start_date, end_date)
+    except Exception as e:
+        exceptions.append(('duration', e))
 
     try:
         _check_loan_period(user, items, start_date, end_date)
@@ -190,10 +233,10 @@ def request_items(user, items, start_date, end_date, waitlist=False):
             raise e
 
     group_uuid = str(uuid.uuid4())
+    res = []
     for item in items:
-        item.current_status = 'on_loan'
-        item.save()
-        clc = CirculationLoanCycle.new(current_status='requested',
+        current_status = CirculationLoanCycle.STATUS_REQUESTED
+        clc = CirculationLoanCycle.new(current_status=current_status,
                                        item=item, user=user,
                                        start_date=start_date,
                                        end_date=end_date,
@@ -201,6 +244,8 @@ def request_items(user, items, start_date, end_date, waitlist=False):
                                        desired_end_date=desired_end_date,
                                        issued_date=datetime.datetime.now(),
                                        group_uuid=group_uuid)
+        res.append(clc)
+
         create_event(user=user, item=item, loan_cycle=clc,
                      event=CirculationEvent.EVENT_CLC_CREATED_REQUEST)
 
@@ -208,13 +253,22 @@ def request_items(user, items, start_date, end_date, waitlist=False):
                        name=user.name, action='requested',
                        items=[x.record.title for x in items])
 
+    return res
+
 
 def try_return_items(items):
     exceptions = []
     try:
-        _check_item(items, 'on_loan')
+        _check_items(items)
     except Exception as e:
         exceptions.append(('items', e))
+
+    try:
+        check_field_in('current_status',
+                       [CirculationItem.STATUS_ON_LOAN],
+                       'The item is in the wrong status')(objs=items)
+    except Exception as e:
+        exceptions.append(('items_status', e))
 
     if exceptions:
         raise ValidationExceptions(exceptions)
@@ -227,13 +281,15 @@ def return_items(items):
         raise e
 
     for item in items:
-        item.current_status = 'on_shelf'
+        item.current_status = CirculationItem.STATUS_ON_SHELF
         item.save()
-        clc = CirculationLoanCycle.search(item=item,
-                                          current_status='on_loan')[0]
-        clc.current_status = 'finished'
+        #clc = CirculationLoanCycle.search(item=item,
+        #                                  current_status='on_loan')[0]
+        on_loan = CirculationLoanCycle.STATUS_ON_LOAN
+        query = 'item:{0} current_status:{1}'.format(item.id, on_loan)
+        clc = CirculationLoanCycle.search(query)[0]
+        clc.current_status = CirculationLoanCycle.STATUS_FINISHED
         clc.save()
-        user = clc.user
-        create_event(user=user, item=item, loan_cycle=clc,
+        update_waitlist(clc)
+        create_event(user=clc.user, item=item, loan_cycle=clc,
                      event=CirculationEvent.EVENT_CLC_FINISHED)
-        #finish_clcs([clc])

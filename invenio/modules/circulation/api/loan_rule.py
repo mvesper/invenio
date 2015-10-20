@@ -11,6 +11,8 @@ def create(item_group, user_group, location_code, loan_period):
 
     create_event(loan_rule=clr, event=CirculationEvent.EVENT_LR_CREATE)
 
+    return clr
+
 
 def update(clr, **kwargs):
     current_items, changed = _update(clr, **kwargs)

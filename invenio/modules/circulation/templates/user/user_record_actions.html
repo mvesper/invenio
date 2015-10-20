@@ -1,0 +1,135 @@
+{# -*- coding: utf-8 -*-
+#
+# This file is part of Invenio.
+# Copyright (C) 2015 CERN.
+#
+# Invenio is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# Invenio is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Invenio; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+
+{%- extends 'circulation_base_blank.html' -%}
+
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "user.js", "circulation.css" %}
+{% endblock %}
+
+{%- block circulation_body -%}
+<div id="circulation_search_result">
+    <div class="panel panel-default" id="user_{{user.id}}">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-md-12">
+                    <a href="/circulation/entities/user/{{user.id}}">User {{user.id}}</a>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-2">CCID</div>
+                <div class="col-md-10">{{user.ccid}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">Name</div>
+                <div class="col-md-10">{{user.name}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">Email</div>
+                <div class="col-md-10">{{user.email}}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-default" id="record_{{record.id}}">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-md-12">
+                    <a href="/circulation/entities/record/{{record.id}}">Record {{record.id}}</a>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-2">Title</div>
+                <div class="col-md-10">{{record.title}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">Authors</div>
+                <div class="col-md-10">
+                    <ul class="list-unstyled"> 
+                        {% for author in record.authors %}
+                            <li>{{author}}</li> 
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">Items:</div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    {% for item in record._items %}
+                        <div class="row">
+                            <div class="col-md-2">
+                                {{item.item.barcode}}
+                            </div>
+                            <div class="col-md-1">
+                                {{item.item.current_status}}
+                            </div>
+                            <div class="col-md-2">
+                                {{item.item.volume}}
+                            </div>
+                            <div class="col-md-2">
+                                {{item.item.shelf_number}}
+                            </div>
+                            <div class="col-md-2">
+                                {% if item.request%}
+                                    <button type="button" class="btn btn-block btn-success user_action" id="request_button_{{item.item.id}}" data-type="item" data-user_id="{{user.id}}">REQUEST</button>
+                                {% else %}
+                                    <button type="button" class="btn btn-block btn-danger user_action" id="request_button_{{item.item.id}}" disabled="true" data-type="item" data-user_id="{{user.id}}">REQUEST</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Dates</div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <input class="form-control" id="circulation_date_from" type="text" value="{{start_date}}">
+                </div>
+                <div class="col-md-6">
+                    <input class="form-control" id="circulation_date_to" type="text" value="{{end_date}}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Options</div>
+        <div class="panel-body">
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" class="circulation_option" id="circulation_option_waitlist">Waitlist
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+{%- endblock -%}

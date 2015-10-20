@@ -4,9 +4,44 @@ from jinja2 import Template
 from itertools import starmap
 
 from invenio.ext.email import send_email
-from invenio.modules.circulation.models import (CirculationEvent,
-                                                CirculationMailTemplate,
+from invenio.modules.circulation.models import (CirculationMailTemplate,
                                                 CirculationLoanRule)
+
+
+def check_field_in(field_name, values, message):
+    def wrapper(objs):
+        def check(obj):
+            return obj.__getattribute__(field_name) in values
+        if not all(map(check, objs)):
+            raise Exception(message)
+    return wrapper
+
+
+def check_field_op(field_name, operator, values, message, negate=False):
+    def wrapper(objs):
+        def check(obj):
+            attr = obj.__getattribute__(field_name)
+            oper = attr.__getattribute__(operator)
+            if negate:
+                return not oper(values)
+            return oper(values)
+        if not all(map(check, objs)):
+            raise Exception(message)
+    return wrapper
+
+
+def try_functions(*funcs):
+    def wrapper(**kwargs):
+        exceptions = []
+        for name, func in funcs:
+            try:
+                func(**kwargs)
+            except Exception as e:
+                exceptions.append((name, e))
+
+        if exceptions:
+            raise ValidationExceptions(exceptions)
+    return wrapper
 
 
 def update(obj, **kwargs):
@@ -32,7 +67,9 @@ def update(obj, **kwargs):
 
 def email_notification(template_name, sender, receiver, **kwargs):
     try:
-        cmt = CirculationMailTemplate.search(template_name=template_name)[0]
+        # cmt = CirculationMailTemplate.search(template_name=template_name)[0]
+        query = 'template_name:{0}'.format(template_name)
+        cmt = CirculationMailTemplate.search(query)[0]
     except IndexError:
         return
 
@@ -46,12 +83,21 @@ def email_notification(template_name, sender, receiver, **kwargs):
                content=content)
 
 
-def get_loan_period(user, item):
+def get_loan_period(user, items):
     try:
-        clr = CirculationLoanRule.search(user_group=user.user_group,
-                                          item_group=item.item_group,
-                                          location_code=item.location.code)[0]
-        return clr.loan_period
+        res = []
+        for item in items:
+            """
+            clr = CirculationLoanRule.search(user_group=user.user_group,
+                                             item_group=item.item_group,
+                                             location_code=item.location.code)
+            """
+            query = 'user_group:{0} item_group:{1} location_code:{2}'
+            query = query.format(user.user_group, item.item_group,
+                                 item.location.code)
+            clr = CirculationLoanRule.search(query)[0]
+            res.append(clr.loan_period)
+        return max(res)
     except IndexError:
         return 0
 
@@ -62,10 +108,14 @@ class DateException(Exception):
         self.contained_dates = contained_dates
 
     def __str__(self):
+        """
+        TODO
         tmp = ['{0} - {1}'.format(start, end)
                for start, end in self.suggested_dates[:-1]]
         tmp.append('{0} - ...'.format(self.suggested_dates[-1]))
         return 'The date is already taken, try: ' + ' or '.join(tmp)
+        """
+        return 'The date is already taken.'
 
 
 class ValidationExceptions(Exception):
@@ -78,7 +128,7 @@ class ValidationExceptions(Exception):
 
 
 class DateManager(object):
-    _start = datetime.date(2015, 1, 1)
+    _start = datetime.date(1970, 1, 1)
 
     @classmethod
     def _convert_to_days(cls, start_date, end_date):
@@ -95,14 +145,16 @@ class DateManager(object):
             return cls._start + datetime.timedelta(days=start_days)
 
     @classmethod
-    def _build_timeline(cls, periods):
+    def _build_timeline(cls, requested_period, periods):
         periods = sorted(periods, key=lambda x: x[0])
         periods = list(starmap(cls._convert_to_days, periods))
-        _min = min(periods, key=lambda x: x[0])[0]
-        _max = max(periods, key=lambda x: x[1])[1]
+        requested_period = cls._convert_to_days(*requested_period)
+        periods_and_requested = periods + [requested_period]
+        period_min = min(periods_and_requested, key=lambda x: x[0])[0]
+        period_max = max(periods_and_requested, key=lambda x: x[1])[1]
 
         time_line = []
-        for x in range(_min, _max):
+        for x in range(period_min, period_max):
             for start, end in periods:
                 if start <= x <= end:
                     time_line.append(1)
@@ -110,95 +162,105 @@ class DateManager(object):
             else:
                 time_line.append(0)
 
-        return _min, time_line
-
-    @classmethod
-    def get_date_suggestions(cls, periods):
-        _now = (datetime.date.today() - cls._start).days
-        try:
-            timeline_start, timeline = cls._build_timeline(periods)
-        except ValueError:
-            return []
-
-        res = []
-        start = None
-        end = None
-        active = False
-
-        if _now < timeline_start:
-            start = _now
-            active = True
-
-        for i, day in enumerate(timeline):
-            if day:
-                # This means 1, occupied day
-                if active:
-                    end = timeline_start + i - 1
-                    active = False
-                    res.append((start, end))
-            else:
-                # This means 0, free day
-                if not active:
-                    start = timeline_start + i
-                    active = True
-
-        res.append((timeline_start+len(timeline)+1, None))
-
-        return list(starmap(cls._convert_to_datetime, res))
+        return period_min, time_line
 
     @classmethod
     def get_contained_date(cls, requested_start, requested_end, periods):
         try:
-            timeline_start, timeline = cls._build_timeline(periods)
+            timeline_start, timeline = cls._build_timeline((requested_start,
+                                                            requested_end),
+                                                           periods)
         except ValueError:
             return requested_start, requested_end
-        requested_start, requested_end = cls._convert_to_days(requested_start,
-                                                              requested_end)
-        timeline_end = timeline_start + len(timeline)
 
-        start = None
-        end = None
-        active = False
+        req_start_day, req_end_day = cls._convert_to_days(requested_start,
+                                                          requested_end)
 
-        # CASE 1: Start and end before the actual timeline
-        if (requested_start <= timeline_start and
-                requested_end <= timeline_start):
-            return cls._convert_to_datetime(requested_start, requested_end)
-        # CASE 2: Start and end after the actual timeline
-        elif (requested_start >= timeline_end and
-              requested_end >= timeline_end):
-            return cls._convert_to_datetime(requested_start, requested_end)
+        start_in_timeline = req_start_day - timeline_start
+        end_in_timeline = req_end_day - timeline_start
 
-        # CASE 3:
-        if requested_start <= timeline_start:
-            active = True
-            start = requested_start
-            iter_start = 0
+        start, end = None, None
+
+        for i, day in enumerate(timeline[start_in_timeline:end_in_timeline]):
+            if day == 0:
+                if start is None:
+                    start = start_in_timeline+i
+            elif day == 1:
+                if start is not None and end is None:
+                    end = start_in_timeline+i-1
+
+        if start is None and end is None:
+            raise DateException(None, None)
+        elif start is not None and end is None:
+            return cls._convert_to_datetime(timeline_start+start, req_end_day)
         else:
-            iter_start = requested_start - timeline_start
+            return cls._convert_to_datetime(timeline_start+start,
+                                            timeline_start+end)
 
-        if requested_end > timeline_end:
-            end = requested_end
+    @classmethod
+    def get_date_suggestions(cls, periods):
+        if not periods:
+            return [datetime.date.today()]
+        today = datetime.date.today()
+        try:
+            timeline_start, timeline = cls._build_timeline((today, today),
+                                                           periods)
+        except ValueError:
+            return []
 
-        iter_end = requested_end - timeline_start
+        res = []
+        start, end = None, None
 
-        for i, day in list(enumerate(timeline))[iter_start:iter_end]:
-            if day:
-                if active:
-                    end = timeline_start + i - 1
-                    break
-            else:
-                if not active:
-                    active = True
-                    start = timeline_start + i
+        for i, day in enumerate(timeline):
+            if day == 0:
+                if start is None:
+                    start = i
+            elif day == 1:
+                if start is not None and end is None:
+                    end = i-1
 
-        if start is not None and end is None:
-            end = requested_end
-        elif start is None and end is not None:
-            start = timeline_end
-        elif start is None and end is None:
-            return None, None
-            # TODO
-            # raise Exception('No available dates')
+            if start is not None and end is not None:
+                res.append((timeline_start+start, timeline_start+end))
+                start, end = None, None
 
-        return cls._convert_to_datetime(start, end)
+        if start is None and end is None:
+            res.append((timeline_start+len(timeline)+1, None))
+        elif start is not None:
+            res.append((timeline_start+start, timeline_start+len(timeline)))
+
+        return list(starmap(cls._convert_to_datetime, res))
+
+
+class CirculationTestBase(object):
+    def create_test_data(self):
+        import invenio.modules.circulation.api as api
+        import invenio.modules.circulation.models as models
+        self.cl = api.location.create('CCL', 'CERN CENTRAL LIBRARY', '')
+        self.clr = api.loan_rule.create(models.CirculationItem.GROUP_BOOK,
+                                        models.CirculationUser.GROUP_DEFAULT,
+                                        self.cl.code, 28)
+        self.cu = api.user.create(1, 934657, 'John Doe', '3 1-014', 'C27800',
+                                  'john.doe@cern.ch', '+41227141337', '',
+                                  models.CirculationUser.GROUP_DEFAULT)
+        self.ci = api.item.create(30, self.cl.id, '978-1934356982',
+                                  'CM-B00001338', 'books', '13.37', 'Vol 1',
+                                  'no desc',
+                                  models.CirculationItem.STATUS_ON_SHELF,
+                                  models.CirculationItem.GROUP_BOOK)
+        self.clcs = []
+
+    def delete_test_data(self):
+        for clc in self.clcs:
+            clc.delete()
+        self.cu.delete()
+        self.ci.delete()
+        self.cl.delete()
+        self.clr.delete()
+
+    def create_dates(self, start_days=0, start_weeks=0,
+                     end_days=0, end_weeks=4):
+        start_date = (datetime.date.today() +
+                      datetime.timedelta(days=start_days, weeks=start_weeks))
+        end_date = (start_date +
+                    datetime.timedelta(days=end_days, weeks=end_weeks))
+        return start_date, end_date

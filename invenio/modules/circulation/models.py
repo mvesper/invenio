@@ -22,14 +22,16 @@ bibcirculation database models.
 """
 import datetime
 import jsonpickle
+import json
 import importlib
 import elasticsearch
 
-#from invenio_records.api import RecordMetadata
+# from invenio_records.api import RecordMetadata
 from invenio_records.models import Record
 from invenio_records.api import get_record
 from invenio.ext.sqlalchemy import db
 from invenio.ext.sqlalchemy.utils import session_manager
+from sqlalchemy.ext import mutable
 from sqlalchemy.orm import subqueryload_all
 
 
@@ -46,6 +48,21 @@ class CirculationPickleHandler(jsonpickle.handlers.BaseHandler):
     def restore(self, obj):
         cls = self._get_class(obj['py/object'])
         return cls.get(obj['id'])
+
+
+class ArrayType(db.TypeDecorator):
+    impl = db.String
+
+    def process_bind_param(self, value, dialect):
+        return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value == 'null':
+            return []
+        return json.loads(value)
+
+    def copy(self):
+        return ArrayType(self.impl.length)
 
 
 class CirculationObject(object):
@@ -97,29 +114,77 @@ class CirculationObject(object):
     @classmethod
     @session_manager
     def delete_all(cls):
+        '''
         cls.query.delete()
         cls._es.indices.delete(index=cls.__tablename__)
         cls._es.indices.create(index=cls.__tablename__)
+        '''
+        for x in cls.query.all():
+            cls.get(x.id).delete()
 
     @session_manager
     def delete(self):
         db.session.delete(self)
         self._es.delete(index=self.__tablename__,
                         doc_type=self.__tablename__,
-                        id=self.id)
+                        id=self.id,
+                        refresh=True)
 
+    '''
     @classmethod
     def search(cls, **kwargs):
+        """
         queries = []
         for key, value in kwargs.items():
             queries.append({'match': {key: cls._encode(value)}})
-        query = {'query': {'bool': {'must': queries}}}
+        query = {'query': {'bool': {'must': queries}}, 'min_score': 0.2}
         res = cls._es.search(index=cls.__tablename__, body=query)
+        return [cls.get(x['_id']) for x in res['hits']['hits']]
+        """
+        import inspect
+        attrs = inspect.getmembers(cls)
+        def get_attr(name):
+            for attr_name, attr in attrs:
+                if attr_name == name:
+                    return attr
+
+        query = cls.query
+        for key, value in kwargs.items():
+            attr = get_attr(key)
+            try:
+                query = query.filter(attr.contains(value))
+            except AttributeError:
+                msg = 'The attribute ({0}) is not defined'.format(key)
+                raise Exception(msg)
+
+        return [cls.get(x.id) for x in query.all()]
+    '''
+    @classmethod
+    def search(cls, query):
+        from invenio_search.api import Query
+        result = Query(query).search()
+        tmp = result.body['query']['bool']['must'][0]
+        es_query = {'query': {'bool': {'must': [tmp]}}}
+        res = cls._es.search(index=cls.__tablename__, body=es_query)
         return [cls.get(x['_id']) for x in res['hits']['hits']]
 
     @session_manager
     def save(self):
         """Save object to persistent storage."""
+        # Diry shit :(
+        '''
+        The ArrayType attribute is not tracked by SQLAlchemy, which means that
+        calling save will never actually write it to the DB. Marking it as
+        *dirty* does the trick.
+        '''
+        try:
+            from sqlalchemy.orm.attributes import flag_modified
+            self.additional_statuses
+            flag_modified(self, 'additional_statuses')
+        except (AttributeError, KeyError):
+            pass
+        # End of dirty shit :(
+
         self.modification_date = datetime.datetime.now()
 
         # Create dict for elasticsearch
@@ -143,7 +208,8 @@ class CirculationObject(object):
         self._es.index(index=self.__tablename__,
                        doc_type=self.__tablename__,
                        id=self.id,
-                       body=es_data)
+                       body=es_data,
+                       refresh=True)
 
         """
         db_data, es_data = {}, {}
@@ -268,7 +334,6 @@ class CirculationRecord(CirculationObject):
                           for key, val in kwargs.items()])
         return [cls.get(x) for x in Query(query).search().recids]
 
-
     @session_manager
     def save(self):
         raise Exception('CirculationRecord is a Wrapper class for Record.')
@@ -286,12 +351,19 @@ class CirculationItem(CirculationObject, db.Model):
     collection = db.Column(db.String(255))
     description = db.Column(db.String(255))
     current_status = db.Column(db.String(255))
+    additional_statuses = db.Column(ArrayType(255))
     item_group = db.Column(db.String(255))
+    shelf_number = db.Column(db.String(255))
+    volume = db.Column(db.String(255))
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     _data = db.Column(db.LargeBinary)
 
     GROUP_BOOK = 'book'
+
+    STATUS_ON_SHELF = 'on_shelf'
+    STATUS_ON_LOAN = 'on_loan'
+    STATUS_IN_PROCESS = 'in_process'
 
     @db.reconstructor
     def init_on_load(self):
@@ -302,6 +374,7 @@ class CirculationLoanCycle(CirculationObject, db.Model):
     __tablename__ = 'circulation_loan_cycle'
     id = db.Column(db.BigInteger, primary_key=True, nullable=False)
     current_status = db.Column(db.String(255))
+    additional_statuses = db.Column(ArrayType(255))
     item_id = db.Column(db.BigInteger, db.ForeignKey('circulation_item.id'))
     item = db.relationship('CirculationItem')
     user_id = db.Column(db.BigInteger, db.ForeignKey('circulation_user.id'))
@@ -310,10 +383,18 @@ class CirculationLoanCycle(CirculationObject, db.Model):
     end_date = db.Column(db.Date)
     desired_start_date = db.Column(db.Date)
     desired_end_date = db.Column(db.Date)
+    requested_extension_end_date = db.Column(db.Date)
     issued_date = db.Column(db.DateTime)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     _data = db.Column(db.LargeBinary)
+
+    STATUS_ON_LOAN = 'on_loan'
+    STATUS_REQUESTED = 'requested'
+    STATUS_FINISHED = 'finished'
+    STATUS_CANCELED = 'canceled'
+    STATUS_OVERDUE = 'overdue'
+    STATUS_LOAN_EXTENSION_REQUESTED = 'loan_extension_requested'
 
 
 class CirculationUser(CirculationObject, db.Model):
@@ -374,21 +455,27 @@ class CirculationLoanRule(CirculationObject, db.Model):
 class CirculationEvent(CirculationObject, db.Model):
     __tablename__ = 'circulation_event'
     id = db.Column(db.BigInteger, primary_key=True, nullable=False)
-    user_id = db.Column(db.BigInteger, db.ForeignKey('circulation_user.id'))
+    user_id = db.Column(db.BigInteger, db.ForeignKey('circulation_user.id',
+                                                     ondelete="SET NULL"))
     user = db.relationship('CirculationUser')
-    item_id = db.Column(db.BigInteger, db.ForeignKey('circulation_item.id'))
+    item_id = db.Column(db.BigInteger, db.ForeignKey('circulation_item.id',
+                                                     ondelete="SET NULL"))
     item = db.relationship('CirculationItem')
     loan_cycle_id = db.Column(db.BigInteger,
-                              db.ForeignKey('circulation_loan_cycle.id'))
+                              db.ForeignKey('circulation_loan_cycle.id',
+                                            ondelete="SET NULL"))
     loan_cycle = db.relationship('CirculationLoanCycle')
     location_id = db.Column(db.BigInteger,
-                            db.ForeignKey('circulation_location.id'))
+                            db.ForeignKey('circulation_location.id',
+                                          ondelete="SET NULL"))
     location = db.relationship('CirculationLocation')
     mail_template_id = db.Column(db.BigInteger,
-                                 db.ForeignKey('circulation_mail_template.id'))
+                                 db.ForeignKey('circulation_mail_template.id',
+                                               ondelete="SET NULL"))
     mail_template = db.relationship('CirculationMailTemplate')
     loan_rule_id = db.Column(db.BigInteger,
-                             db.ForeignKey('circulation_loan_rule.id'))
+                             db.ForeignKey('circulation_loan_rule.id',
+                                           ondelete="SET NULL"))
     loan_rule = db.relationship('CirculationLoanRule')
     event = db.Column(db.String(255))
     description = db.Column(db.String(255))
@@ -399,7 +486,7 @@ class CirculationEvent(CirculationObject, db.Model):
     EVENT_ITEM_CREATE = 'item_created'
     EVENT_ITEM_CHANGE = 'item_changed'
     EVENT_ITEM_DELETE = 'item_deleted'
-    EVENT_ITEM_MISSING  = 'item_missing'
+    EVENT_ITEM_MISSING = 'item_missing'
     EVENT_ITEM_RETURNED_MISSING = 'item_returned_missing'
     EVENT_ITEM_IN_PROCESS = 'item_in_process'
     EVENT_USER_CREATE = 'user_created'
@@ -413,7 +500,7 @@ class CirculationEvent(CirculationObject, db.Model):
     EVENT_CLC_CANCELED = 'clc_canceled'
     EVENT_CLC_UPDATED = 'clc_updated'
     EVENT_CLC_OVERDUE = 'clc_overdue'
-    EVENT_CLC_REQUEST_LOAN_EXTENSION_REQUEST = 'clc_request_loan_extension'
+    EVENT_CLC_REQUEST_LOAN_EXTENSION = 'clc_request_loan_extension'
     EVENT_CLC_LOAN_EXTENSION = 'clc_loan_extension'
     EVENT_LOCATION_CREATE = 'location_created'
     EVENT_LOCATION_CHANGE = 'location_changed'

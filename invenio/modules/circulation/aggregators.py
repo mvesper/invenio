@@ -57,22 +57,8 @@ class CirculationRecordAggregator(BaseAggregator):
                             'type': 'array',
                             'format': 'table',
                             'items': {
-                                'type': 'object',
-                                'title': 'Author',
-                                'properties': {
-                                        'name': {'type': 'string'}
-                                    }
-                                }
-                            },
-                        'items': {
-                            'type': 'array',
-                            'format': 'table',
-                            'items': {
-                                'type': 'object',
-                                'title': 'Item',
-                                'properties': {
-                                        'id': {'type': 'integer'}
-                                    }
+                                'type': 'string',
+                                'title': 'Authors',
                                 }
                             }
                         }
@@ -103,9 +89,11 @@ class CirculationItemAggregator(BaseAggregator):
                         'isbn': {'type': 'string'},
                         'barcode': {'type': 'string'},
                         'collection': {'type': 'string'},
+                        'shelf_number': {'type': 'string'},
                         'description': {'type': 'string'},
                         'item_group': {'type': 'string'},
                         'current_status': {'type': 'string'},
+                        'volume': {'type': 'string'},
                         }
                     }
 
@@ -223,6 +211,7 @@ class CirculationEventAggregator(BaseAggregator):
                         'mail_template_id': {'type': 'integer'},
                         'event': {'type': 'string'},
                         'description': {'type': 'string'},
+                        'creation_date': {'type': 'string'},
                         }
                     }
 

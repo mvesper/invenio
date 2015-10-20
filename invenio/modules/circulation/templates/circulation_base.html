@@ -21,6 +21,15 @@
 {%- extends 'page.html' -%}
 
 {%- block body -%}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div id="circulation_alert" class="alert alert-success" role="alert">
+                {% for message in messages %}
+                    {{message}}
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
     <ul class="nav nav-pills nav-justified">
         <li {% if active_nav == "circulation" %}class="active"{% endif %}><a href="/circulation">Circulation</a></li>
         <li {% if active_nav == "entities" %}class="active"{% endif %}><a href="/circulation/entities">Entities</a></li>

@@ -22,7 +22,7 @@ import json
 import invenio.modules.circulation.api as api
 import invenio.modules.circulation.models as models
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, flash
 
 from invenio.modules.circulation.aggregators import aggregators
 from invenio.modules.circulation.views.utils import (get_name_link_class,
@@ -145,18 +145,25 @@ def api_entity_get_json_schema():
 def api_entity_run_action():
     data = json.loads(request.get_json())
 
-    _, link, clazz = get_name_link_class(models.entities, data['entity'])
+    name, link, clazz = get_name_link_class(models.entities, data['entity'])
 
     _api = apis[link]
 
     obj = clazz.get(data['id'])
     func = data['function']
 
+    """
     try:
         _api.__getattribute__(func)([obj])
         return ('', 200)
     except Exception:
         return ('', 500)
+    """
+    _api.__getattribute__(func)([obj])
+    msg = 'Successfully called {0} on {1} with id: {2}'
+    msg = msg.format(data['function'], name, data['id'])
+    flash(msg)
+    return ('', 200)
 
 
 @blueprint.route('/api/entity/search', methods=['POST'])
@@ -177,16 +184,17 @@ def api_entity_search():
 def api_entity_create():
     data = json.loads(request.get_json())
 
-    _, link, clazz = get_name_link_class(models.entities, data['entity'])
+    name, link, clazz = get_name_link_class(models.entities, data['entity'])
     
-    apis[link].create(**data['data'])
+    entity = apis[link].create(**data['data'])
     """
     try:
         apis[link].create(**data['data'])
     except Exception:
         return ('', 500)
     """
-
+    flash('Successfully created a new {0} with id {1}.'.format(name,
+                                                               entity.id))
     return ('', 200)
 
 
@@ -194,7 +202,7 @@ def api_entity_create():
 def api_entity_update():
     data = json.loads(request.get_json())
 
-    _, link, clazz = get_name_link_class(models.entities, data['entity'])
+    name, link, clazz = get_name_link_class(models.entities, data['entity'])
 
     apis[link].update(clazz.get(data['id']), **data['data'])
     """
@@ -204,6 +212,8 @@ def api_entity_update():
         return ('', 500)
     """
 
+    flash('Successfully updated the {0} with id {1}.'.format(name,
+                                                             data['id']))
     return ('', 200)
 
 
@@ -211,7 +221,7 @@ def api_entity_update():
 def api_entity_delete():
     data = json.loads(request.get_json())
 
-    _, link, clazz = get_name_link_class(models.entities, data['entity'])
+    name, link, clazz = get_name_link_class(models.entities, data['entity'])
 
     apis[link].delete(clazz.get(data['id']))
     """
@@ -221,4 +231,6 @@ def api_entity_delete():
         return ('', 500)
     """
 
+    flash('Successfully deleted the {0} with id {1}.'.format(name,
+                                                             data['id']))
     return ('', 200)

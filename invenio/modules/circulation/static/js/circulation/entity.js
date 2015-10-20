@@ -93,8 +93,7 @@ function($) {
         var search_body = {'entity': entity, 'data': json}
 
         function success(data) {
-            var msg = 'Successfully created a new entity.'
-            $.notify(msg, 'success');
+            window.location.href = '/circulation/entities/' + entity;
         }
 
         $.ajax({
@@ -115,9 +114,7 @@ function($) {
         var search_body = {'entity': entity, 'id': id, 'data': json}
 
         function success(data) {
-            var msg = 'Successfully updated the following entity: ' +
-                      entity + ' ' + id;
-            $.notify(msg, 'success');
+            window.location.reload();
         }
 
         $.ajax({
@@ -164,63 +161,52 @@ function($) {
         var id = data[1];
         var func = event.target.id;
 
-        function yay(data) {
-            $.notify('Success', 'success');
+        function success(data) {
+            $(document).scrollTop(0);
+            window.location.reload();
         }
 
         $.ajax({
             type: "POST",
             url: "/circulation/api/entity/run_action",
             data: JSON.stringify(JSON.stringify({'entity': entity, 'id': id, 'function': func})),
-            success: yay,
+            success: success,
             contentType: 'application/json',
         });
     });
     
 
     $('#entity_search_result').on("click", ".entity_delete", function(event){
+        var decision = confirm('Do you really want to delete this entity?');
+        if (!decision){
+            return;
+        }
+
         var entity = $('#entity_search_result').attr('data-entity');
         var id = event.target.id.split('_')[1];
         var element = $('#'+entity+'_'+id);
-        $.notify.addStyle('confirm_deletion', {
-            html: "<div><div class='btn-group' role='group' style='width: 200px'>" +
-                        "<button type='button' id='notify_deletion_confirm_"+id+"' class='btn btn-success'>" +
-                            "<span class='glyphicon glyphicon-ok'></span>" +
-                        "</button>" +
-                        "<button type='button' id='notify_deletion_cancel_"+id+"' class='btn btn-danger '>" +
-                            "<span class='glyphicon glyphicon-remove'></span>" +
-                        "</button>" +
-                  "</div></div>"
+
+        function success(data) {
+            window.location.reload();
+        }
+
+        var search_body = {'entity': entity, 'id': id};
+        $.ajax({
+            type: "POST",
+            url: "/circulation/api/entity/delete",
+            data: JSON.stringify(JSON.stringify(search_body)),
+            success: success,
+            contentType: 'application/json',
         });
+    });
 
-        $(event.target).notify({}, 
-                               {style: 'confirm_deletion',
-                                autoHide: false,
-                                clickToHide: false,
-                                position: 'right middle'});
-
-        $(document).on('click', '#notify_deletion_confirm_'+id, function(event){
-            function success(data) {
-                var msg = 'Successfully deleted the following entity: ' +
-                          entity + ' ' + id;
-                $.notify(msg, 'success');
-                $(this).trigger('notify-hide');
-                element.hide(500, function(){element.remove();});
+    $(document).ready(function(){
+        if($('#circulation_alert').length){
+            function hide_circulation_alert(){
+                $('#circulation_alert').fadeOut(1000);
             }
-
-            var search_body = {'entity': entity, 'id': id};
-            $.ajax({
-                type: "POST",
-                url: "/circulation/api/entity/delete",
-                data: JSON.stringify(JSON.stringify(search_body)),
-                success: success,
-                contentType: 'application/json',
-            });
-        })
-
-        $(document).on('click', '#notify_deletion_cancel_'+id, function(event){
-            $(this).trigger('notify-hide');
-        })
+            setTimeout(hide_circulation_alert, 5000);
+        }
     });
 }
 );

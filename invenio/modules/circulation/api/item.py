@@ -1,26 +1,12 @@
 from invenio.modules.circulation.api.utils import ValidationExceptions
 from invenio.modules.circulation.api.event import create as create_event
 from invenio.modules.circulation.api.loan_cycle import (cancel_clcs,
-                                                        overdue_clcs,
-                                                        return_ill_clcs)
-from invenio.modules.circulation.models import (CirculationItem,
+                                                        overdue_clcs,)
+from invenio.modules.circulation.models import (CirculationRecord,
+                                                CirculationItem,
                                                 CirculationLoanCycle,
                                                 CirculationEvent)
 from invenio.modules.circulation.api.utils import update as _update
-
-"""
-This shall be utilized in the future
-def try_functions(*funcs, **kwargs):
-    exceptions = []
-    for name, func in funcs:
-        try:
-            func(**kwargs)
-        except Exception as e
-            exceptions.append(('item', e))
-
-    if exceptions:
-        raise ValidationExceptions(exceptions)
-"""
 
 
 def _check_status(statuses, objs):
@@ -34,8 +20,8 @@ def try_create(current_status):
         raise Exception('The Item is in the wrong status.')
 
 
-def create(record_id, location_id, isbn, barcode, collection,
-           description, current_status, item_group):
+def create(record_id, location_id, isbn, barcode, collection, shelf_number,
+           volume, description, current_status, item_group):
     try:
         try_create(current_status)
     except ValidationExceptions as e:
@@ -44,6 +30,7 @@ def create(record_id, location_id, isbn, barcode, collection,
     ci = CirculationItem.new(record_id=record_id,
                              location_id=location_id,
                              barcode=barcode, isbn=isbn, collection=collection,
+                             shelf_number=shelf_number,
                              current_status=current_status,
                              description=description,
                              item_group=item_group)
@@ -51,6 +38,8 @@ def create(record_id, location_id, isbn, barcode, collection,
     description = 'Created in status: {0}'.format(current_status)
     create_event(item=ci, event=CirculationEvent.EVENT_ITEM_CREATE,
                  description=description)
+    ci.record = CirculationRecord.get(ci.record_id)
+    return ci
 
 
 def update(item, **kwargs):
@@ -91,9 +80,18 @@ def lose_items(items):
         item.save()
         create_event(item=item, event=CirculationEvent.EVENT_ITEM_MISSING)
 
-        clcs = [x for status in ['on_loan', 'reserved', 'overdue']
+        """
+        clcs = [x for status in ['requested', 'on_loan']
                 for x in CirculationLoanCycle.search(item=item,
                                                      current_status=status)]
+        """
+        query = 'item:{0} current_status:{1}'
+        statuses = [CirculationLoanCycle.STATUS_REQUESTED,
+                    CirculationLoanCycle.STATUS_ON_LOAN]
+        clcs = [x for status in statuses
+                for x in CirculationLoanCycle.search(query.format(item.id,
+                                                                  status))]
+
         cancel_clcs(clcs)
 
 
@@ -139,7 +137,7 @@ def process_items(items, description):
         raise e
 
     for item in items:
-        item.current_status = 'in_process'
+        item.current_status = CirculationItem.STATUS_IN_PROCESS
         item.save()
         create_event(item=item,
                      event=CirculationEvent.EVENT_ITEM_IN_PROCESS,
@@ -164,10 +162,13 @@ def overdue_items(items):
         raise e
 
     for item in items:
-        clcs = CirculationLoanCycle.search(item=item, current_status='on_loan')
+        query = 'item:{0} current_status:{0}'.format(item.id,
+                CirculationLoanCycle.STATUS_ON_LOAN)
+        clcs = CirculationLoanCycle.search(query)
         overdue_clcs(clcs)
 
 
+"""
 def try_return_ill_items(items):
     exceptions = []
     try:
@@ -190,6 +191,7 @@ def return_ill_items(items):
         item.saved()
         clcs = CirculationLoanCycle.search(item=item, current_status='on_loan')
         return_ill_clcs(clcs)
+"""
 
 
 schema = {'lose_items': [],

@@ -14,16 +14,24 @@ def create_all():
 
     cl1 = CirculationItem.new(record_id=100,
                               location = clo,
-                              barcode='i1', isbn='i1', collection='books',
+                              barcode='CM-B00001337',
+                              isbn='978-1934356982',
+                              collection='books',
+                              volume='Vol 1',
+                              shelf_number='13.37',
                               current_status='on_shelf',
                               item_group=CirculationItem.GROUP_BOOK)
     cl2 = CirculationItem.new(record_id=30,
                               location = clo,
-                              barcode='i2', isbn='i2', collection='books',
+                              barcode='CM-B00001338',
+                              isbn='978-1934356983',
+                              collection='books',
+                              volume='Vol 1',
+                              shelf_number='13.37',
                               current_status='on_shelf',
                               item_group=CirculationItem.GROUP_BOOK)
 
-    cu = CirculationUser.new(current_status='active', ccid='u1',
+    cu = CirculationUser.new(current_status='active', ccid='934657',
                              invenio_user_id=1,
                              name='John Doe',
                              email='john.doe@cern.ch', phone='+41227671483',
@@ -46,13 +54,13 @@ def create_all():
 
 
 def delete_all():
+    CirculationEvent.delete_all()
+    CirculationLoanCycle.delete_all()
+    CirculationLoanRule.delete_all()
     CirculationItem.delete_all()
     CirculationUser.delete_all()
     CirculationLocation.delete_all()
-    CirculationLoanCycle.delete_all()
-    CirculationEvent.delete_all()
     CirculationMailTemplate.delete_all()
-    CirculationLoanRule.delete_all()
 
 
 """

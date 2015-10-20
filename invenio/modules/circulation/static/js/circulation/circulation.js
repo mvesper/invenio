@@ -92,7 +92,7 @@ function($) {
                            circulation_state: state_string}
 
         function success(data) {
-            $.notify('Successfully '+action+'ed.', 'success');
+            window.location.href = '/circulation/';
         }
 
         $.ajax({
@@ -102,6 +102,15 @@ function($) {
             success: success,
             contentType: 'application/json',
         });
+    });
+
+    $(document).ready(function(){
+        if($('#circulation_alert').length){
+            function hide_circulation_alert(){
+                $('#circulation_alert').fadeOut(1000);
+            }
+            setTimeout(hide_circulation_alert, 5000);
+        }
     });
 
     $('#circulation_date_from').datepicker({ dateFormat: 'yy-mm-dd' });

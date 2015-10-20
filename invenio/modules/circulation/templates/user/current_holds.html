@@ -1,0 +1,121 @@
+{# -*- coding: utf-8 -*-
+#
+# This file is part of Invenio.
+# Copyright (C) 2015 CERN.
+#
+# Invenio is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# Invenio is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Invenio; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+
+{%- extends 'circulation_base_blank.html' -%}
+
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "user.js" %}
+{% endblock %}
+
+{%- block circulation_body -%}
+    <div class="row">
+        <div class="col-md-10" id="entity_detail"></div>
+        <div class="col-md-2" id="entity_update">
+            <button type="button" class="btn btn-default btn-success btn-block" id="entity_update_button">UPDATE</button>
+        </div>
+    </div>
+
+    <h3>Current Loans</h3>
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="list-inline">
+                {% for lc in aggregated.additions.current_loans %}
+                    <li>
+                        <div class="panel panel-default" id="item_{{lc.item.id}}">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <a href="/circulation/entities/item/{{lc.item.id}}">{{lc.item.id}}</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-6">Title</div>
+                                    <div class="col-md-6">{{lc.item.record.title}}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">Start Date</div>
+                                    <div class="col-md-6">{{lc.start_date}}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">End Date</div>
+                                    <div class="col-md-6">{{lc.end_date}}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <button type="button" class="btn btn-default btn-default btn-block user_action" id="extension_button_{{lc.id}}" data-type="clc" data-clc_id="{{lc.id}}">REQUEST EXTENSION</button>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <button type="button" class="btn btn-default btn-default btn-block user_action" id="lose_button_{{lc.item.id}}" data-type="item" data-clc_id="{{lc.item.id}}">REPORT LOSS</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <h3>Current Requests</h3>
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="list-inline">
+                {% for lc in aggregated.additions.current_requests %}
+                    <li>
+                        <div class="panel panel-default" id="item_{{lc.item.id}}">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <a href="/circulation/entities/item/{{lc.item.id}}">{{lc.item.id}}</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-6">Title</div>
+                                    <div class="col-md-6">{{lc.item.record.title}}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">Start Date</div>
+                                    <div class="col-md-6">{{lc.start_date}}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">End Date</div>
+                                    <div class="col-md-6">{{lc.end_date}}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <button type="button" class="btn btn-default btn-default btn-block user_action" id="cancel_button_{{lc.id}}" data-type="clc" data-clc_id="{{lc.id}}">CANCEL REQUEST</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+{%- endblock -%}
