@@ -10,7 +10,7 @@ class CirculationTestBase(InvenioTestCase):
         self.cl = api.location.create('CCL', 'CERN CENTRAL LIBRARY', '')
         self.clr = api.loan_rule.create(models.CirculationItem.GROUP_BOOK,
                                         models.CirculationUser.GROUP_DEFAULT,
-                                        self.cl.code, 28)
+                                        self.cl.code, 28, True)
         self.cu = api.user.create(1, 934657, 'John Doe', '3 1-014', 'C27800',
                                   'john.doe@cern.ch', '+41227141337', '', 
                                   models.CirculationUser.GROUP_DEFAULT)

@@ -3,10 +3,13 @@ import datetime
 from invenio.modules.circulation.models import (CirculationLoanCycle,
                                                 CirculationEvent)
 from invenio.modules.circulation.api.utils import (DateManager,
+                                                   DateException,
                                                    ValidationExceptions,
                                                    try_functions,
                                                    check_field_in,
-                                                   check_field_op)
+                                                   check_field_op,
+                                                   _check_loan_duration,
+                                                   _check_loan_period_extension)
 from invenio.modules.circulation.api.utils import update as _update
 from invenio.modules.circulation.api.event import create as create_event
 
@@ -44,7 +47,8 @@ def delete(clc):
 
 try_cancel_clcs = try_functions(
         ('status', check_field_in('current_status',
-                                  [CirculationLoanCycle.STATUS_REQUESTED],
+                                  [CirculationLoanCycle.STATUS_REQUESTED,
+                                   CirculationLoanCycle.STATUS_ON_LOAN],
                                   'Object(s) is/are in the wrong state'))
         )
 
@@ -152,60 +156,74 @@ def overdue_clcs(clcs):
         create_event(loan_cycle=clc, event=CirculationEvent.EVENT_CLC_OVERDUE)
 
 
-try_request_loan_extension = try_functions(
-        ('status', check_field_in('current_status',
-                                  [CirculationLoanCycle.STATUS_ON_LOAN],
-                                  'Object(s) is/are in the wrong state')),
-        ('status', check_field_op('additional_statuses', '__contains__',
-                                  (CirculationLoanCycle
-                                   .STATUS_LOAN_EXTENSION_REQUESTED),
-                                  'Extension is already requested.',
-                                  negate=True)),
-        )
+def _extension_allowed(user, items):
+    pass
 
 
-def request_loan_extension(clcs, requested_end_date):
+def try_loan_extension(clcs, requested_end_date):
+    start_date = datetime.date.today()
+    user = set([clc.user for clc in clcs])
+    items = [clc.item for clc in clcs]
+
+    exceptions = []
+
     try:
-        try_request_loan_extension(objs=clcs)
-    except ValidationExceptions as e:
-        raise e
+        check_field_in('current_status',
+                       [CirculationLoanCycle.STATUS_ON_LOAN],
+                       'Object(s) is/are in the wrong state')(objs=clcs)
+    except Exception as e:
+        exceptions.append(('status', e))
 
-    for clc in clcs:
-        clc.requested_extension_end_date = requested_end_date
-        clc.additional_statuses.append(CirculationLoanCycle
-                                       .STATUS_LOAN_EXTENSION_REQUESTED)
-        clc.save()
-        create_event(loan_cycle=clc,
-                     event=CirculationEvent.EVENT_CLC_REQUEST_LOAN_EXTENSION)
-
-
-SLER = CirculationLoanCycle.STATUS_LOAN_EXTENSION_REQUESTED
-try_loan_extension = try_functions(
-        ('status', check_field_in('current_status',
-                                  [CirculationLoanCycle.STATUS_ON_LOAN],
-                                  'Object(s) is/are in the wrong state')),
-        ('status', check_field_op('additional_statuses', '__contains__',
-                                  (CirculationLoanCycle
-                                   .STATUS_LOAN_EXTENSION_REQUESTED),
-                                  'A loan extension was not requested.')),
-        )
-
-
-def loan_extension(clcs):
     try:
-        try_loan_extension(objs=clcs)
+        if len(user) > 1:
+            raise Exception('Too many different users')
+        else:
+            user = user.pop()
+    except Exception as e:
+        exceptions.append(('user', e))
+
+    try:
+        _extension_allowed(user, items)
+    except Exception as e:
+        exceptions.append(('extension_allowed', e))
+
+    try:
+        _check_loan_duration(user, items, start_date, requested_end_date)
+    except Exception as e:
+        exceptions.append(('duration', e))
+
+    try:
+        _check_loan_period_extension(clcs, requested_end_date)
+    except DateException as e:
+        exceptions.append(('date_suggestion', e))
+    except Exception as e:
+        exceptions.append(('date', e))
+
+    if exceptions:
+        raise ValidationExceptions(exceptions)
+
+
+def loan_extension(clcs, requested_end_date, waitlist=False):
+    new_end_date = requested_end_date
+    try:
+        try_loan_extension(clcs, requested_end_date)
     except ValidationExceptions as e:
-        raise e
+        if [x[0] for x in e.exceptions] == ['date_suggestion'] and waitlist:
+            _start, _end = e.exceptions[0][1].contained_dates
+            new_end_date = _end
+            # TODO: Do some loan specific checks here...
+            if _start != datetime.date.today():
+                raise e
+        else:
+            raise e
 
     for clc in clcs:
         try:
             clc.additional_statuses.remove(CirculationLoanCycle.STATUS_OVERDUE)
         except ValueError:
             pass
-        clc.additional_statuses.remove(CirculationLoanCycle
-                                       .STATUS_LOAN_EXTENSION_REQUESTED)
-        clc.desired_end_date = clc.requested_extension_end_date
-        clc.end_date = clc.requested_extension_end_date
+        clc.desired_end_date = requested_end_date
+        clc.end_date = new_end_date
         clc.save()
         create_event(loan_cycle=clc,
                      event=CirculationEvent.EVENT_CLC_LOAN_EXTENSION)

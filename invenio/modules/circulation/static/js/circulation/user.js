@@ -26,9 +26,9 @@ function($) {
         var elem = $(this);
         var type = elem.attr('data-type');
         var user_id = elem.attr('data-user_id');
-        var item_id = elem.attr('id').split('_')[2];
+        var item_id = elem.attr('data-item_id');
         var clc_id = elem.attr('data-clc_id');
-        var action = elem.attr('id').split('_')[0];
+        var action = elem.attr('data-action');
         var start_date = $('#circulation_date_from').val();
         var end_date = $('#circulation_date_to').val();
         
@@ -53,39 +53,54 @@ function($) {
         });
     });
 
-    function get_entity_id(){
-        var url_parts = document.URL.split('/');
-        return [url_parts[url_parts.length -2],
-                url_parts[url_parts.length -1]];
-    }
+    var _clc_id = null;
+
+    $('.current_hold_user_action').on('click', function(event){
+        var user_id = $(this).attr('data-user_id');
+        var clc_id = $(this).attr('data-clc_id');
+        var action = $(this).attr('data-action');
+        
+        if (action == 'extension'){
+            var data = JSON.parse($(this).attr('data-cal_data'));
+            cal.update(data);
+            _clc_id = clc_id;
+            $('#myModal').modal();
+            return
+        }
+
+        var user_action = {'user_id': user_id,
+                           'clc_id': clc_id,
+                           'action': action,
+                           'requested_end_date': null}
+
+        function success(data){
+            window.location.reload();
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/circulation/api/user/run_current_hold_action",
+            data: JSON.stringify(JSON.stringify(user_action)),
+            success: success,
+            contentType: 'application/json',
+        });
+    });
 
     $('#entity_detail').ready(function() {
         if ($('#entity_detail').length == 0) {
             return;
         }
-        var data = get_entity_id();
-        entity = data[0];
-        id = data[1];
+        var editor = $('#entity_detail');
+        var data = JSON.parse(editor.attr('data-editor_data'));
+        var schema = JSON.parse(editor.attr('data-editor_schema'));
 
-        function start_json_editor(data) {
-            data = JSON.parse(data);
-            json_editor = new JSONEditor($('#entity_detail')[0], 
-                    {
-                        schema: data['schema'],
-                        theme: 'bootstrap3',
-                        no_additional_properties: true,
-                    });
-
-            json_editor.setValue(data['data']);
-        }
-
-        $.ajax({
-            type: "POST",
-            url: "/circulation/api/entity/get",
-            data: JSON.stringify(JSON.stringify({'entity': entity, 'id': id})),
-            success: start_json_editor,
-            contentType: 'application/json',
-        });
+        json_editor = new JSONEditor($('#entity_detail')[0], 
+                {
+                    schema: schema,
+                    theme: 'bootstrap3',
+                    no_additional_properties: true,
+                });
+        json_editor.setValue(data);
     });
 
     $(document).ready(function(){
@@ -97,7 +112,132 @@ function($) {
         }
     });
 
-    $('#circulation_date_from').datepicker({ dateFormat: 'yy-mm-dd' });
-    $('#circulation_date_to').datepicker({ dateFormat: 'yy-mm-dd' });
+    cal = null;
+
+    $('#cal-heatmap').ready(function(){
+        if ($('#cal-heatmap').length == 0) {
+            return;
+        }
+        cal = new CalHeatMap();
+        var data = JSON.parse($('#cal-heatmap').attr('data-cal_data'));
+        var range = parseInt($('#cal-heatmap').attr('data-cal_range'));
+        if (range == 0){
+            return
+        }
+        var init = {itemSelector: "#cal-heatmap",
+                    domain: "month",
+                    subDomain: "x_day",
+                    range: range,
+                    cellSize: 30,
+                    subDomainTextFormat: "%d",
+                    legend: [1],
+                    legendColors: ["green", "#EE0000"],
+                    displayLegend: false,}
+        cal.init(init);
+    });
+
+    $('.record_item').mouseenter(function(){
+        var data = JSON.parse($(this).attr('data-cal_data'));
+        var range = parseInt($(this).attr('data-cal_range'));
+        if (range == 0){
+            return
+        }
+        cal.update(data);
+
+        var warnings = JSON.parse($(this).attr('data-warnings'));
+        if (warnings.length == 0) {
+            return
+        }
+        var content = [];
+        for (var i = 0; i < warnings.length; i++) {
+            var category = warnings[i][0];
+            var message = warnings[i][1];
+            content.push(category + ': ' + message);
+        }
+        content = content.join('<br>');
+        $(this).popover({
+            content:content,
+            container:'body',
+            placement:'top',
+            html:true}).popover('show');
+    });
+
+    $('.record_item').mouseleave(function(){
+        cal.update({});
+        $(this).popover('hide');
+    });
+
+    $('#user_check_params').on('click', function(){
+        var user_id = $(this).attr('data-user_id');
+        var record_id = $(this).attr('data-record_id');
+        var start_date = $('#circulation_date_from').val();
+        var end_date = $('#circulation_date_to').val();
+        var waitlist = $('#circulation_option_waitlist').is(':checked');
+        var delivery = $('#circulation_option_delivery').val();
+
+        var state = start_date+':'+end_date+':'+waitlist+':'+delivery;
+
+        window.location.href = '/circulation/user/'+user_id+'/record/'+record_id+'/'+state
+    });
+
+    $('#circulation_option_waitlist').ready(function(){
+        var obj = $('#circulation_option_waitlist');
+        obj.attr('checked', (obj.attr('data-checked') === 'True'));
+    });
+
+    $('#circulation_option_delivery').ready(function(){
+        var obj = $('#circulation_option_delivery');
+        obj.val(obj.attr('data-val'));
+    });
+
+    $('#circulation_extension_date').on('change', function(event){
+        var body = {'action': 'extension',
+                    'clc_id': 1,
+                    'requested_end_date': $('#circulation_extension_date').val()}
+
+        function success(data){
+            var status = JSON.parse(data).status;
+            if (status == 200) {
+                $('#circulation_extension_button').prop("disabled", false);
+                $('#circulation_extension_button').removeClass('btn-danger');
+                $('#circulation_extension_button').addClass('btn-success');
+            } else if (status == 400) {
+                $('#circulation_extension_button').prop("disabled", true);
+                $('#circulation_extension_button').removeClass('btn-success');
+                $('#circulation_extension_button').addClass('btn-danger');
+            }
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/circulation/api/user/try_action",
+            data: JSON.stringify(JSON.stringify(body)),
+            success: success,
+            contentType: 'application/json',
+        });
+    });
+
+    $('#circulation_extension_button').on('click', function(event){
+        var requested_end_date = $('#circulation_extension_date').val();
+        var user_action = {'clc_id': _clc_id,
+                           'action': 'extension',
+                           'requested_end_date': requested_end_date}
+
+        function success(data){
+            window.location.reload();
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/circulation/api/user/run_current_hold_action",
+            data: JSON.stringify(JSON.stringify(user_action)),
+            success: success,
+            contentType: 'application/json',
+        });
+    });
+
+    $('#circulation_date_from').datepicker({dateFormat: 'yy-mm-dd'});
+    $('#circulation_date_to').datepicker({dateFormat: 'yy-mm-dd'});
+    $('#circulation_extension_date').datepicker({dateFormat: 'yy-mm-dd'});
 }
 );

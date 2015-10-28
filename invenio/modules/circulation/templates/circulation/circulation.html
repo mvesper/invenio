@@ -25,6 +25,10 @@
   {% bundles "circulation.js", "circulation.css" %}
 {% endblock %}
 
+{% from 'macros.html' import date_selection %}
+{% from 'macros.html' import options %}
+{% from 'macros.html' import warnings %}
+
 {%- block circulation_body -%}
 <div id="circulation_search_result">
     <div class="row">
@@ -81,9 +85,10 @@
                         </div>
                     </div>
 
-                    <div class="panel panel-default">
+                    <div id="circulation_items" class="panel panel-default">
                         <div class="panel-heading">Items</div>
                         <div class="panel-body" id="circulation_item">
+                            {{ warnings(item_warnings) }}
                             <ul class="list-inline">
                             {% for item in items %}
                                 <li>
@@ -136,15 +141,42 @@
                                                     {% endfor %}
                                                 <ul>
                                             </div>
-                                            <div class="col-md-2">Items</div>
                                         </div>
                                         <div class="row">
+                                            <div class="col-md-2">Items</div>
                                             <div class="col-md-10">
-                                                <ul class="list-inline">
-                                                    {% for item in record.items %}
-                                                        <li><a class="btn btn-default" href="/circulation/entities/item/{{item.id}}" role="button">{{item.id}}</a></li>
-                                                    {% endfor %}
-                                                </ul>
+                                                <table class="table table-hover">
+                                                    <tr>
+                                                        <th>ID</th>
+                                                        <th>Barcode</th>
+                                                        <th>Status</th>
+                                                        <th>Volume</th>
+                                                        <th>Shelf Number</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                {% for item in record.items %}
+                                                    <tr class="record_item" data-cal_data="{{item.cal_data}}" data-cal_range="{{item.cal_range}}">
+                                                        <td>
+                                                            <a href="/circulation/entities/item/{{item.id}}" role="button">{{item.id}}</a>
+                                                        </td>
+                                                        <td>
+                                                            {{item.barcode}}
+                                                        </td>
+                                                        <td>
+                                                            {{item.current_status}}
+                                                        </td>
+                                                        <td>
+                                                            {{item.volume}}
+                                                        </td>
+                                                        <td>
+                                                            {{item.shelf_number}}
+                                                        </td>
+                                                        <td>
+                                                            <button type="button" class="btn btn-success item_select" data-record_id="{{record.id}}" data-item_id="{{item.id}}">SELECT</button>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
@@ -153,42 +185,10 @@
                         </div>
                     </div>
 
-                    <div class="panel panel-default">
-                        <div class="panel-heading">Dates</div>
-                        <div class="panel-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <input class="form-control" id="circulation_date_from" type="text" value="{{start_date}}">
-                                </div>
-                                <div class="col-md-6">
-                                    <input class="form-control" id="circulation_date_to" type="text" value="{{end_date}}">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {{ date_selection(start_date, end_date, cal_data, cal_range, date_warnings=date_warnings) }}
+                    {{ options(waitlist_enable=True, waitlist=waitlist, delivery_enable=True, delivery=delivery) }}
 
-                    <div class="panel panel-default">
-                        <div class="panel-heading">Options</div>
-                        <div class="panel-body">
-                            <ul class="list-inline">
-                                <li>
-                                    <div class="checkbox">
-                                        <label>
-                                            <input type="checkbox" class="circulation_option" id="circulation_option_waitlist">Waitlist
-                                        </label>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div class="form-group">
-                                        <select class="form-control">
-                                            <option>Internal Mail</option>
-                                            <option>Pick up</option>
-                                        </select>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+                    <button type="button" class="btn btn-block btn-success request_new_params" id="circulation_check_params">CHECK PARAMETERS</button>
         </div>
         <div id="circulation_validation" class="col-md-2">
             {% if loan is none %}
@@ -215,6 +215,7 @@
                 <button type="button" class="btn btn-block btn-danger" id="return_button" disabled="true">Return</button>
             {% endif %}
         </div>
+
     </div>
 </div>
 {%- endblock -%}

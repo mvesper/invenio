@@ -322,16 +322,19 @@ class CirculationRecord(CirculationObject):
         raise Exception('CirculationRecord is a Wrapper class for Record.')
 
     @classmethod
-    def search(cls, **kwargs):
+    def search(cls, query):
         """
         from invenio.modules.search.api import SearchEngine
         query = ' '.join(['{0}:{1}'.format(key, val)
                           for key, val in kwargs.items()])
         return [cls.get(x) for x in SearchEngine(query).search()]
         """
+        """
         from invenio_search.api import Query
         query = ' '.join(['{0}:{1}'.format(key, val)
                           for key, val in kwargs.items()])
+        """
+        from invenio_search.api import Query
         return [cls.get(x) for x in Query(query).search().recids]
 
     @session_manager
@@ -383,7 +386,6 @@ class CirculationLoanCycle(CirculationObject, db.Model):
     end_date = db.Column(db.Date)
     desired_start_date = db.Column(db.Date)
     desired_end_date = db.Column(db.Date)
-    requested_extension_end_date = db.Column(db.Date)
     issued_date = db.Column(db.DateTime)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
@@ -394,7 +396,6 @@ class CirculationLoanCycle(CirculationObject, db.Model):
     STATUS_FINISHED = 'finished'
     STATUS_CANCELED = 'canceled'
     STATUS_OVERDUE = 'overdue'
-    STATUS_LOAN_EXTENSION_REQUESTED = 'loan_extension_requested'
 
 
 class CirculationUser(CirculationObject, db.Model):
@@ -446,6 +447,7 @@ class CirculationLoanRule(CirculationObject, db.Model):
     item_group = db.Column(db.String(255))
     user_group = db.Column(db.String(255))
     location_code = db.Column(db.String(255))
+    extension_allowed = db.Column(db.Boolean)
     loan_period = db.Column(db.Integer)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)

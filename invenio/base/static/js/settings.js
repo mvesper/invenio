@@ -56,6 +56,8 @@ require.config({
     "ckeditor-core": "vendors/ckeditor/ckeditor",
     "ckeditor-jquery": "vendors/ckeditor/adapters/jquery",
     "notify": "circulation/static/js/other/notify",
+    "d3": "circulation/static/js/other/d3",
+    "cal-heatmap": "circulation/static/js/other/cal-heatmap",
   },
   shim: {
     jquery: {
@@ -163,6 +165,14 @@ require.config({
     "notify": {
       deps: ["jquery"],
       exports: "$.fn.notify"
-    }
+    },
+    "d3": {
+      exports: "d3"
+    },
+    "cal-heatmap": {
+      deps: ["jquery", "d3"],
+      exports: "cal-heatmap"
+    },
+
   }
 });

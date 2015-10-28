@@ -19,6 +19,12 @@
 #}
 
 {%- extends 'circulation_base_blank.html' -%}
+{% from 'macros.html' import record as _record %}
+{% from 'macros.html' import date_selection %}
+{% from 'macros.html' import options %}
+{% from 'macros.html' import warnings %}
+
+{% from 'macros_entities.html' import user as _user %}
 
 {% block global_bundles %}
   {{ super() }}
@@ -27,29 +33,7 @@
 
 {%- block circulation_body -%}
 <div id="circulation_search_result">
-    <div class="panel panel-default" id="user_{{user.id}}">
-        <div class="panel-heading">
-            <div class="row">
-                <div class="col-md-12">
-                    <a href="/circulation/entities/user/{{user.id}}">User {{user.id}}</a>
-                </div>
-            </div>
-        </div>
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-2">CCID</div>
-                <div class="col-md-10">{{user.ccid}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Name</div>
-                <div class="col-md-10">{{user.name}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Email</div>
-                <div class="col-md-10">{{user.email}}</div>
-            </div>
-        </div>
-    </div>
+    {{ _user(id=user.id, ccid=user.ccid, name=user.name, email=user.email) }}
 
     <div class="panel panel-default" id="record_{{record.id}}">
         <div class="panel-heading">
@@ -79,57 +63,48 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
+                    <table class="table table-hover">
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Status</th>
+                            <th>Volume</th>
+                            <th>Shelf Number</th>
+                            <th>Action</th>
+                        </tr>
                     {% for item in record._items %}
-                        <div class="row">
-                            <div class="col-md-2">
+                    <tr class="record_item" data-cal_data="{{item.cal_data}}" data-cal_range="{{item.cal_range}}" data-warnings="{{item.warnings}}">
+                            <td>
                                 {{item.item.barcode}}
-                            </div>
-                            <div class="col-md-1">
+                            </td>
+                            <td>
                                 {{item.item.current_status}}
-                            </div>
-                            <div class="col-md-2">
+                            </td>
+                            <td>
                                 {{item.item.volume}}
-                            </div>
-                            <div class="col-md-2">
+                            </td>
+                            <td>
                                 {{item.item.shelf_number}}
-                            </div>
-                            <div class="col-md-2">
+                            </td>
+                            <td>
                                 {% if item.request%}
                                     <button type="button" class="btn btn-block btn-success user_action" id="request_button_{{item.item.id}}" data-type="item" data-user_id="{{user.id}}">REQUEST</button>
                                 {% else %}
                                     <button type="button" class="btn btn-block btn-danger user_action" id="request_button_{{item.item.id}}" disabled="true" data-type="item" data-user_id="{{user.id}}">REQUEST</button>
                                 {% endif %}
-                            </div>
-                        </div>
+                            </td>
+                        </tr>
                     {% endfor %}
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Dates</div>
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <input class="form-control" id="circulation_date_from" type="text" value="{{start_date}}">
-                </div>
-                <div class="col-md-6">
-                    <input class="form-control" id="circulation_date_to" type="text" value="{{end_date}}">
-                </div>
-            </div>
-        </div>
-    </div>
+    {{ date_selection(start_date, end_date, cal_data, cal_range) }}
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Options</div>
-        <div class="panel-body">
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" class="circulation_option" id="circulation_option_waitlist">Waitlist
-                </label>
-            </div>
-        </div>
-    </div>
+    {{ options(waitlist_enable=True, waitlist=waitlist, delivery_enable=True, delivery=delivery) }}
+
+    <button type="button" class="btn btn-block btn-success request_new_params" id="user_check_params" data-user_id="{{user.id}}" data-record_id="{{record.id}}">CHECK PARAMETERS</button>
+
 </div>
 {%- endblock -%}

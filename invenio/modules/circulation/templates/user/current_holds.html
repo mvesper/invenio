@@ -22,12 +22,12 @@
 
 {% block global_bundles %}
   {{ super() }}
-  {% bundles "user.js" %}
+  {% bundles "user.js", "circulation.css" %}
 {% endblock %}
 
 {%- block circulation_body -%}
     <div class="row">
-        <div class="col-md-10" id="entity_detail"></div>
+        <div class="col-md-10" id="entity_detail" data-editor_data='{{editor_data}}' data-editor_schema="{{editor_schema}}"></div>
         <div class="col-md-2" id="entity_update">
             <button type="button" class="btn btn-default btn-success btn-block" id="entity_update_button">UPDATE</button>
         </div>
@@ -36,86 +36,69 @@
     <h3>Current Loans</h3>
     <div class="row">
         <div class="col-md-12">
-            <ul class="list-inline">
-                {% for lc in aggregated.additions.current_loans %}
-                    <li>
-                        <div class="panel panel-default" id="item_{{lc.item.id}}">
-                            <div class="panel-heading">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <a href="/circulation/entities/item/{{lc.item.id}}">{{lc.item.id}}</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="row">
-                                    <div class="col-md-6">Title</div>
-                                    <div class="col-md-6">{{lc.item.record.title}}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">Start Date</div>
-                                    <div class="col-md-6">{{lc.start_date}}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">End Date</div>
-                                    <div class="col-md-6">{{lc.end_date}}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <button type="button" class="btn btn-default btn-default btn-block user_action" id="extension_button_{{lc.id}}" data-type="clc" data-clc_id="{{lc.id}}">REQUEST EXTENSION</button>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <button type="button" class="btn btn-default btn-default btn-block user_action" id="lose_button_{{lc.item.id}}" data-type="item" data-clc_id="{{lc.item.id}}">REPORT LOSS</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
+            <table class="table">
+                <tr>
+                    <th>Title</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th class="col-md-3">Actions</th>
+                </tr>
+                {% for lc in current_loans %}
+                <tr>
+                    <td>{{lc.clc.item.record.title}}</td>
+                    <td>{{lc.clc.start_date}}</td>
+                    <td>{{lc.clc.end_date}}</td>
+                    <td><button type="button" class="btn btn-default btn-default current_hold_user_action" id="extension_button_{{lc.clc.id}}" data-clc_id="{{lc.clc.id}}" data-item_id="{{lc.clc.item.id}}" data-action="extension" data-cal_data="{{lc.cal_data}}" data-cal_range="{{lc.cal_range}}">EXTEND LOAN</button><button type="button" class="btn btn-default btn-default current_hold_user_action" id="lose_button_{{lc.clc.item.id}}" data-clc_id="{{lc.clc.id}}" data-item_id="{{lc.clc.item.id}}" data-action="loss">REPORT LOSS</button></td>
+                </tr>
                 {% endfor %}
-            </ul>
+            </table>
         </div>
     </div>
 
     <h3>Current Requests</h3>
     <div class="row">
         <div class="col-md-12">
-            <ul class="list-inline">
-                {% for lc in aggregated.additions.current_requests %}
-                    <li>
-                        <div class="panel panel-default" id="item_{{lc.item.id}}">
-                            <div class="panel-heading">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <a href="/circulation/entities/item/{{lc.item.id}}">{{lc.item.id}}</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="row">
-                                    <div class="col-md-6">Title</div>
-                                    <div class="col-md-6">{{lc.item.record.title}}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">Start Date</div>
-                                    <div class="col-md-6">{{lc.start_date}}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">End Date</div>
-                                    <div class="col-md-6">{{lc.end_date}}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <button type="button" class="btn btn-default btn-default btn-block user_action" id="cancel_button_{{lc.id}}" data-type="clc" data-clc_id="{{lc.id}}">CANCEL REQUEST</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
+            <table class="table">
+                <tr>
+                    <th>Title</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th class="col-md-3">Actions</th>
+                </tr>
+                {% for lc in current_requests %}
+                <tr>
+                    <td>{{lc.clc.item.record.title}}</td>
+                    <td>{{lc.clc.start_date}}</td>
+                    <td>{{lc.clc.end_date}}</td>
+                    <td><button type="button" class="btn btn-default btn-default current_hold_user_action" id="cancel_button_{{lc.clc.id}}" data-type="clc.clc" data-clc_id="{{lc.clc.id}}" data-action="cancel">CANCEL REQUEST</button></td>
+                </tr>
                 {% endfor %}
-            </ul>
+            </table>
         </div>
     </div>
+
+
+<div class="modal fade" id="myModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+              <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title">Select New End Date</h4>
+              </div>
+              <div class="modal-body">
+                    <div class="col-md-12">
+                        <input class="form-control" id="circulation_extension_date" type="text" value="{{end_date}}" placeholder="Select the new end date">
+                    </div>
+                    <div class="col-md-12">
+                        <div id="cal-heatmap" data-cal_data="{}" data-cal_range="3"></div>
+                    </div>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                  <button type="button" id="circulation_extension_button" class="btn btn-default" disabled="true">Extend Loan</button>
+              </div>
+        </div>
+    </div>
+</div>
 
 {%- endblock -%}

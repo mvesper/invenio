@@ -4,7 +4,8 @@ from jinja2 import Template
 from itertools import starmap
 
 from invenio.ext.email import send_email
-from invenio.modules.circulation.models import (CirculationMailTemplate,
+from invenio.modules.circulation.models import (CirculationLoanCycle,
+                                                CirculationMailTemplate,
                                                 CirculationLoanRule)
 
 
@@ -42,6 +43,76 @@ def try_functions(*funcs):
         if exceptions:
             raise ValidationExceptions(exceptions)
     return wrapper
+
+
+def _get_requested_dates(lcs):
+    return [(lc.start_date, lc.end_date) for lc in lcs]
+
+
+def _get_affected_loan_cycles(statuses, items):
+    def filter_func(x):
+        return x.current_status not in statuses
+    #clc_list = [CirculationLoanCycle.search(item=item.id) for item in items]
+    clc_list = [CirculationLoanCycle.search('item:{0}'.format(item.id))
+                for item in items]
+    clc_list = [item for sub_list in clc_list for item in sub_list]
+    return filter(filter_func, clc_list)
+
+
+def _check_loan_period(user, items, start_date, end_date):
+    lcs = _get_affected_loan_cycles(['finished', 'canceled'], items)
+    requested_dates = _get_requested_dates(lcs)
+    _start, _end = DateManager.get_contained_date(start_date, end_date,
+                                                  requested_dates)
+    available_start_date = _start
+    desired_start_date = start_date
+
+    available_end_date = _end
+    desired_end_date = end_date
+
+    avd_start_date = available_start_date != desired_start_date
+    avd_end_date = available_end_date != desired_end_date
+    if avd_start_date or avd_end_date:
+        suggested_dates = DateManager.get_date_suggestions(requested_dates)
+        contained_dates = (_start, _end)
+        raise DateException(suggested_dates=suggested_dates,
+                            contained_dates=contained_dates)
+
+
+def _check_loan_period_extension(clcs, requested_end_date):
+    _ids = [clc.id for clc in clcs]
+    items = [clc.item for clc in clcs]
+    start_date = datetime.date.today()
+    end_date = requested_end_date
+
+    lcs = _get_affected_loan_cycles(['finished', 'canceled'], items)
+    lcs = filter(lambda x: x.id not in _ids, lcs)
+    requested_dates = _get_requested_dates(lcs)
+    _start, _end = DateManager.get_contained_date(start_date, end_date,
+                                                  requested_dates)
+    available_start_date = _start
+    desired_start_date = start_date
+
+    available_end_date = _end
+    desired_end_date = end_date
+
+    avd_start_date = available_start_date != desired_start_date
+    avd_end_date = available_end_date != desired_end_date
+    if avd_start_date or avd_end_date:
+        suggested_dates = DateManager.get_date_suggestions(requested_dates)
+        contained_dates = (_start, _end)
+        raise DateException(suggested_dates=suggested_dates,
+                            contained_dates=contained_dates)
+
+
+def _check_loan_duration(user, items, start_date, end_date):
+    desired_loan_period = end_date - start_date
+    allowed_loan_period = get_loan_period(user, items)
+    if desired_loan_period.days > allowed_loan_period:
+        msg = ('The desired loan period ({0} days) exceeds '
+               'the allowed period of {1} days.')
+        raise Exception(msg.format(desired_loan_period.days,
+                                   allowed_loan_period))
 
 
 def update(obj, **kwargs):
@@ -83,6 +154,31 @@ def email_notification(template_name, sender, receiver, **kwargs):
                content=content)
 
 
+def get_loan_rule(user, item):
+    def permutate_positions(iterable, replacement, positions_count):
+	import itertools
+	index_range = range(len(iterable))
+	res = []
+	for p_count in range(positions_count+1):
+		positions = itertools.permutations(index_range, p_count)
+		positions = set(tuple(sorted(x)) for x in positions)
+		for position in positions:
+			tmp = iterable[:]
+			for index in position:
+				tmp[index] = replacement
+			res.append(tmp)
+	return res
+    
+    query_parts = [user.user_group, item.item_group, item.location.code]
+    query = 'user_group:{0} item_group:{1} location_code:{2}'
+    for  permutation in permutate_positions(query_parts, '*', 3):
+        _query = query.format(*permutation)
+        clr = CirculationLoanRule.search(query)
+        if clr:
+           break
+    # TODO
+
+
 def get_loan_period(user, items):
     try:
         res = []
@@ -107,15 +203,14 @@ class DateException(Exception):
         self.suggested_dates = suggested_dates
         self.contained_dates = contained_dates
 
-    def __str__(self):
-        """
-        TODO
         tmp = ['{0} - {1}'.format(start, end)
                for start, end in self.suggested_dates[:-1]]
         tmp.append('{0} - ...'.format(self.suggested_dates[-1]))
-        return 'The date is already taken, try: ' + ' or '.join(tmp)
-        """
-        return 'The date is already taken.'
+        self.message = 'The date is already taken, try: ' + ' or '.join(tmp)
+
+
+    def __str__(self):
+        return self.message
 
 
 class ValidationExceptions(Exception):
@@ -229,38 +324,3 @@ class DateManager(object):
             res.append((timeline_start+start, timeline_start+len(timeline)))
 
         return list(starmap(cls._convert_to_datetime, res))
-
-
-class CirculationTestBase(object):
-    def create_test_data(self):
-        import invenio.modules.circulation.api as api
-        import invenio.modules.circulation.models as models
-        self.cl = api.location.create('CCL', 'CERN CENTRAL LIBRARY', '')
-        self.clr = api.loan_rule.create(models.CirculationItem.GROUP_BOOK,
-                                        models.CirculationUser.GROUP_DEFAULT,
-                                        self.cl.code, 28)
-        self.cu = api.user.create(1, 934657, 'John Doe', '3 1-014', 'C27800',
-                                  'john.doe@cern.ch', '+41227141337', '',
-                                  models.CirculationUser.GROUP_DEFAULT)
-        self.ci = api.item.create(30, self.cl.id, '978-1934356982',
-                                  'CM-B00001338', 'books', '13.37', 'Vol 1',
-                                  'no desc',
-                                  models.CirculationItem.STATUS_ON_SHELF,
-                                  models.CirculationItem.GROUP_BOOK)
-        self.clcs = []
-
-    def delete_test_data(self):
-        for clc in self.clcs:
-            clc.delete()
-        self.cu.delete()
-        self.ci.delete()
-        self.cl.delete()
-        self.clr.delete()
-
-    def create_dates(self, start_days=0, start_weeks=0,
-                     end_days=0, end_weeks=4):
-        start_date = (datetime.date.today() +
-                      datetime.timedelta(days=start_days, weeks=start_weeks))
-        end_date = (start_date +
-                    datetime.timedelta(days=end_days, weeks=end_weeks))
-        return start_date, end_date

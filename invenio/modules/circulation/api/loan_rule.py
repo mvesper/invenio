@@ -4,10 +4,12 @@ from invenio.modules.circulation.api.event import create as create_event
 from invenio.modules.circulation.api.utils import update as _update
 
 
-def create(item_group, user_group, location_code, loan_period):
+def create(item_group, user_group, location_code, loan_period,
+           extension_allowed):
     clr = CirculationLoanRule.new(item_group=item_group, user_group=user_group,
                                   location_code=location_code,
-                                  loan_period=loan_period)
+                                  loan_period=loan_period,
+                                  extension_allowed=extension_allowed)
 
     create_event(loan_rule=clr, event=CirculationEvent.EVENT_LR_CREATE)
 

@@ -21,12 +21,11 @@ import json
 
 import invenio.modules.circulation.api as api
 import invenio.modules.circulation.models as models
+import invenio.modules.circulation.aggregators as aggregators
 
 from flask import Blueprint, render_template, request, flash
 
-from invenio.modules.circulation.aggregators import aggregators
-from invenio.modules.circulation.views.utils import (get_name_link_class,
-                                                     datetime_serial)
+from invenio.modules.circulation.views.utils import datetime_serial
 
 blueprint = Blueprint('entity', __name__, url_prefix='/circulation',
                       template_folder='../templates',
@@ -36,10 +35,41 @@ apis = {'item': api.item, 'loan_cycle': api.loan_cycle, 'user': api.user,
         'event': api.event, 'loan_rule': api.loan_rule,
         'location': api.location, 'mail_template': api.mail_template}
 
+models_entities = {'record': {'name': 'Record',
+                              'class': models.CirculationRecord, '_pos': 0},
+                   'user': {'name': 'User',
+                            'class': models.CirculationUser, '_pos': 1},
+                   'item': {'name': 'Item',
+                            'class': models.CirculationItem, '_pos': 2},
+                   'loan_cycle': {'name': 'Loan Cycle',
+                                  'class': models.CirculationLoanCycle,
+                                  '_pos': 3},
+                   'location': {'name': 'Location',
+                                'class': models.CirculationLocation,
+                                '_pos': 4},
+                   'event': {'name': 'Event',
+                             'class': models.CirculationEvent, '_pos': 5},
+                   'mail_template': {'name': 'Mail Template',
+                                     'class': models.CirculationMailTemplate,
+                                     '_pos': 6},
+                   'loan_rule': {'name': 'Loan Rule',
+                                 'class': models.CirculationLoanRule,
+                                 '_pos': 7}}
+
+aggregators = {'record': aggregators.CirculationRecordAggregator,
+               'user': aggregators.CirculationUserAggregator,
+               'item': aggregators.CirculationItemAggregator,
+               'loan_cycle': aggregators.CirculationLoanCycleAggregator,
+               'location': aggregators.CirculationLocationAggregator,
+               'event': aggregators.CirculationEventAggregator,
+               'mail_template': aggregators.CirculationMailTemplateAggregator,
+               'loan_rule': aggregators.CirculationLoanRuleAggregator}
+
 
 @blueprint.route('/entities')
 def entities_overview():
-    entities = [(name, link) for name, link, _ in models.entities]
+    entities = [(val['name'], key) for key, val
+                in sorted(models_entities.items(), key=lambda x: x[1]['_pos'])]
     return render_template('entities/overview.html',
                            active_nav='entities', entities=entities)
 
@@ -49,44 +79,42 @@ def entities_hub(entity):
     return render_template('entities/entity_hub.html',
                            active_nav='entities', entity=entity)
 
+
 @blueprint.route('/entities/action/search/<entity>')
-def entity_hub_search_all(entity):
-    _, link, clazz = get_name_link_class(models.entities, entity)
-
-    entities = clazz.get_all()
-
-    return render_template('entities/'+link+'.html',
-                           active_nav='entities', entities=entities, entity=entity)
-
 @blueprint.route('/entities/action/search/<entity>/<search>')
-def entity_hub_search(entity, search):
-    _, link, clazz = get_name_link_class(models.entities, entity)
+def entity_hub_search(entity, search=''):
+    entities = models_entities[entity]['class'].search(search)
 
-    search = dict(part.split(':') for part in search.split(' '))
-    entities = clazz.search(**search)
-
-    return render_template('entities/'+link+'.html',
-                           active_nav='entities', entities=entities, entity=entity)
+    return render_template('entities/'+entity+'.html',
+                           active_nav='entities',
+                           entities=entities, entity=entity)
 
 
 @blueprint.route('/entities/<entity>/<id>')
 def entity(entity, id):
-    _, link, clazz = get_name_link_class(models.entities, entity)
-    _, __, aggregator = get_name_link_class(aggregators, entity)
+    clazz = models_entities[entity]['class']
+    aggregator = aggregators[entity]
 
     obj = clazz.get(id)
     aggregated = aggregator.get_aggregated_info(obj)
 
-    aggregated['functions'] = _try_actions(link, aggregated['functions'], obj)
+    aggregated['functions'] = _try_actions(entity, aggregated['functions'],
+                                           obj)
 
-    return render_template('entities/'+link+'_detail.html',
+    editor_data = json.dumps(clazz.get(id).jsonify(), default=datetime_serial)
+    editor_schema = json.dumps(aggregator._json_schema,
+                               default=datetime_serial)
+
+    return render_template('entities/'+entity+'_detail.html',
                            active_nav='entities',
+                           editor_data=editor_data,
+                           editor_schema=editor_schema,
                            aggregated=aggregated)
 
 
-def _try_actions(link, functions, obj):
+def _try_actions(entity, functions, obj):
     try:
-        _api = apis[link]
+        _api = apis[entity]
     except KeyError:
         return []
 
@@ -103,134 +131,88 @@ def _try_actions(link, functions, obj):
 
 @blueprint.route('/entities/action/create/<entity>')
 def entity_new(entity):
+    editor_schema = json.dumps(aggregators[entity]._json_schema,
+                               default=datetime_serial)
     return render_template('entities/entity_create.html',
-                           active_nav='entities', obj={}, entity=entity)
+                           active_nav='entities', obj={}, entity=entity,
+                           editor_data={},
+                           editor_schema=editor_schema)
+
+
+def extract_params(func):
+    import inspect
+    _args = inspect.getargspec(func).args
+
+    def wrap():
+        data = json.loads(request.get_json())
+        return func(**{arg_name: data[arg_name] for arg_name in _args})
+
+    wrap.func_name = func.func_name
+    return wrap
 
 
 @blueprint.route('/api/entity/get', methods=['POST'])
-def api_entity_get():
-    data = json.loads(request.get_json())
-
-    _, __, clazz = get_name_link_class(models.entities, data['entity'])
-    _, __, aggregator = get_name_link_class(aggregators, data['entity'])
+@extract_params
+def api_entity_get(id, entity):
+    clazz = models_entities[entity]['class']
+    aggregator = aggregators[entity]
 
     res = {'schema': aggregator._json_schema,
-           'data': clazz.get(data['id']).jsonify()}
+           'data': clazz.get(id).jsonify()}
 
     return json.dumps(res, default=datetime_serial)
 
 
-@blueprint.route('/api/entity/get_functions', methods=['POST'])
-def api_entity_get_functions():
-    data = json.loads(request.get_json())
-
-    _, __, clazz = get_name_link_class(models.entities, data['entity'])
-
-    # TODO
-    funcs = []
-    res = {'data': funcs}
-    return json.dumps(res)
-
-
-@blueprint.route('/api/entity/get_json_schema', methods=['POST'])
-def api_entity_get_json_schema():
-    data = json.loads(request.get_json())
-
-    _, __, aggregator = get_name_link_class(aggregators, data['entity'])
-
-    return json.dumps({'schema': aggregator._json_schema})
-
-
 @blueprint.route('/api/entity/run_action', methods=['POST'])
-def api_entity_run_action():
-    data = json.loads(request.get_json())
+@extract_params
+def api_entity_run_action(id, entity, function):
+    name = models_entities[entity]['name']
+    obj = models_entities[entity]['class'].get(id)
 
-    name, link, clazz = get_name_link_class(models.entities, data['entity'])
-
-    _api = apis[link]
-
-    obj = clazz.get(data['id'])
-    func = data['function']
-
-    """
-    try:
-        _api.__getattribute__(func)([obj])
-        return ('', 200)
-    except Exception:
-        return ('', 500)
-    """
-    _api.__getattribute__(func)([obj])
+    apis[entity].__getattribute__(function)([obj])
     msg = 'Successfully called {0} on {1} with id: {2}'
-    msg = msg.format(data['function'], name, data['id'])
+    msg = msg.format(function, name, id)
     flash(msg)
     return ('', 200)
 
 
 @blueprint.route('/api/entity/search', methods=['POST'])
-def api_entity_search():
-    data = json.loads(request.get_json())
-
-    _, __, clazz = get_name_link_class(models.entities, data['entity'])
-
-    if data['search']:
-        objs = clazz.search(**data['search'])
-    else:
-        objs = clazz.get_all()
-
+@extract_params
+def api_entity_search(entity, search):
+    objs = models_entities[entity]['class'].search(search)
     return json.dumps([x.jsonify() for x in objs], default=datetime_serial)
 
 
 @blueprint.route('/api/entity/create', methods=['POST'])
-def api_entity_create():
-    data = json.loads(request.get_json())
+@extract_params
+def api_entity_create(entity, data):
+    name = models_entities[entity]['name']
 
-    name, link, clazz = get_name_link_class(models.entities, data['entity'])
-    
-    entity = apis[link].create(**data['data'])
-    """
-    try:
-        apis[link].create(**data['data'])
-    except Exception:
-        return ('', 500)
-    """
+    entity = apis[entity].create(**data)
     flash('Successfully created a new {0} with id {1}.'.format(name,
                                                                entity.id))
     return ('', 200)
 
 
 @blueprint.route('/api/entity/update', methods=['POST'])
-def api_entity_update():
-    data = json.loads(request.get_json())
+@extract_params
+def api_entity_update(id, entity, data):
+    name = models_entities[entity]['name']
+    clazz = models_entities[entity]['class']
 
-    name, link, clazz = get_name_link_class(models.entities, data['entity'])
+    apis[entity].update(clazz.get(id), **data)
 
-    apis[link].update(clazz.get(data['id']), **data['data'])
-    """
-    try:
-        apis[link].update(clazz.get(data['id']), **data['data'])
-    except Exception:
-        return ('', 500)
-    """
-
-    flash('Successfully updated the {0} with id {1}.'.format(name,
-                                                             data['id']))
+    flash('Successfully updated the {0} with id {1}.'.format(name, id))
     return ('', 200)
 
 
 @blueprint.route('/api/entity/delete', methods=['POST'])
-def api_entity_delete():
-    data = json.loads(request.get_json())
+@extract_params
+def api_entity_delete(id, entity):
+    name = models_entities[entity]['name']
+    clazz = models_entities[entity]['class']
 
-    name, link, clazz = get_name_link_class(models.entities, data['entity'])
+    apis[entity].delete(clazz.get(id))
 
-    apis[link].delete(clazz.get(data['id']))
-    """
-    try:
-        apis[link].delete(clazz.get(data['id']))
-    except Exception:
-        return ('', 500)
-    """
-
-    flash('Successfully deleted the {0} with id {1}.'.format(name,
-                                                             data['id']))
+    flash('Successfully deleted the {0} with id {1}.'.format(name, id))
     return ('', 200)

@@ -10,7 +10,9 @@ from invenio.modules.circulation.api.utils import (DateManager,
                                                    ValidationExceptions,
                                                    email_notification,
                                                    get_loan_period,
-                                                   check_field_in)
+                                                   check_field_in,
+                                                   _check_loan_duration,
+                                                   _check_loan_period)
 from invenio.modules.circulation.api.loan_cycle import update_waitlist
 from invenio.modules.circulation.api.event import create as create_event
 
@@ -38,16 +40,7 @@ def _check_start_end_date(start_date, end_date):
         raise Exception('Start date and end date need to be specified.')
 
 
-def _check_loan_duration(user, items, start_date, end_date):
-    desired_loan_period = end_date - start_date
-    allowed_loan_period = get_loan_period(user, items)
-    if desired_loan_period.days > allowed_loan_period:
-        msg = ('The desired loan period ({0} days) exceeds '
-               'the allowed period of {1} days.')
-        raise Exception(msg.format(desired_loan_period.days,
-                                   allowed_loan_period))
-
-
+'''
 def _get_affected_loan_cycles(statuses, items):
     def filter_func(x):
         return x.current_status not in statuses
@@ -56,10 +49,13 @@ def _get_affected_loan_cycles(statuses, items):
                 for item in items]
     clc_list = [item for sub_list in clc_list for item in sub_list]
     return filter(filter_func, clc_list)
+'''
 
 
+'''
 def _get_requested_dates(lcs):
     return [(lc.start_date, lc.end_date) for lc in lcs]
+'''
 
 
 def _check_loan_start(start_date):
@@ -71,7 +67,7 @@ def _check_request_start(start_date):
     if start_date < datetime.date.today():
         raise Exception('To request, the start date must be today or later.')
 
-
+'''
 def _check_loan_period(user, items, start_date, end_date):
     lcs = _get_affected_loan_cycles(['finished', 'canceled'], items)
     requested_dates = _get_requested_dates(lcs)
@@ -90,6 +86,7 @@ def _check_loan_period(user, items, start_date, end_date):
         contained_dates = (_start, _end)
         raise DateException(suggested_dates=suggested_dates,
                             contained_dates=contained_dates)
+'''
 
 
 def try_loan_items(user, items, start_date, end_date, waitlist=False):

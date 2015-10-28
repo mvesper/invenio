@@ -119,7 +119,10 @@ loan_rule_mappings = {'mappings': {
                                 'id': {
                                     'type': 'integer',
                                     'index': 'not_analyzed'},
-                                }
+                                'user_group': {
+                                    'type': 'string',
+                                    'index': 'not_analyzed'},
+                                },
                             }
                         }
                       }

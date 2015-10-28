@@ -93,46 +93,94 @@ class TestLoanCycleApi(CirculationTestBase):
 
         self.delete_test_data()
 
-    def test_request_loan_extension(self):
+    def test_loan_extension_success(self):
         import invenio.modules.circulation.api as api
         import invenio.modules.circulation.models as models
 
         self.create_test_data()
 
-        start_date1, end_date1 = self.create_dates()
+        start_date1, end_date1 = self.create_dates(end_weeks=2)
+        requested_end_date, _ = self.create_dates(start_weeks=4)
         self.clcs = api.circulation.loan_items(self.cu, [self.ci],
                                                start_date1, end_date1,
                                                False)
-        clc = self.clcs[0]
-        requested_date = datetime.date.today() + datetime.timedelta(weeks=4)
-        api.loan_cycle.request_loan_extension(self.clcs, requested_date)
-
-        clc = self.clcs[0]
-        self.assertTrue(len(self.clcs) == 1)
-        self.assertTrue(clc.requested_extension_end_date == requested_date)
-        self.assertTrue(models.CirculationLoanCycle.STATUS_LOAN_EXTENSION_REQUESTED in clc.additional_statuses)
-
-        self.delete_test_data()
-
-    def test_loan_extension(self):
-        import invenio.modules.circulation.api as api
-        import invenio.modules.circulation.models as models
-
-        self.create_test_data()
-
-        start_date1, end_date1 = self.create_dates()
-        requested_end_date, _ = self.create_dates(start_weeks=10)
-        self.clcs = api.circulation.loan_items(self.cu, [self.ci],
-                                               start_date1, end_date1,
-                                               False)
-        clc = self.clcs[0]
-        api.loan_cycle.request_loan_extension([clc], requested_end_date)
-        clc.save()
-        api.loan_cycle.loan_extension(self.clcs)
+        api.loan_cycle.loan_extension(self.clcs, requested_end_date)
 
         clc = self.clcs[0]
         self.assertTrue(len(self.clcs) == 1)
         self.assertTrue(clc.current_status == models.CirculationLoanCycle.STATUS_ON_LOAN)
+        self.assertTrue(clc.end_date == requested_end_date)
+        self.assertTrue(clc.desired_end_date == requested_end_date)
+
+        self.delete_test_data()
+
+    def test_loan_extension_failure(self):
+        import invenio.modules.circulation.api as api
+        import invenio.modules.circulation.models as models
+        from invenio.modules.circulation.api.utils import ValidationExceptions
+
+        self.create_test_data()
+
+        start_date1, end_date1 = self.create_dates(end_weeks=2)
+        start_date2, end_date2 = self.create_dates(start_weeks=3)
+        requested_end_date, _ = self.create_dates(start_weeks=4)
+        self.clcs = api.circulation.loan_items(self.cu, [self.ci],
+                                               start_date1, end_date1,
+                                               False)
+        self.clcs.extend(api.circulation.request_items(self.cu, [self.ci],
+                                                       start_date2,
+                                                       end_date2, False))
+        clc = self.clcs[0]
+        with self.assertRaises(ValidationExceptions):
+            api.loan_cycle.loan_extension([clc], requested_end_date)
+
+        self.delete_test_data()
+
+    def test_loan_extension_waitlist(self):
+        import invenio.modules.circulation.api as api
+        import invenio.modules.circulation.models as models
+
+        self.create_test_data()
+
+        start_date1, end_date1 = self.create_dates(end_weeks=2)
+        start_date2, end_date2 = self.create_dates(start_weeks=3)
+        requested_end_date, _ = self.create_dates(start_weeks=4)
+        self.clcs = api.circulation.loan_items(self.cu, [self.ci],
+                                               start_date1, end_date1,
+                                               False)
+        self.clcs.extend(api.circulation.request_items(self.cu, [self.ci],
+                                                       start_date2,
+                                                       end_date2, False))
+        clc = self.clcs[0]
+        api.loan_cycle.loan_extension([clc], requested_end_date, True)
+        self.assertTrue(clc.end_date == start_date2 - datetime.timedelta(days=1))
+        self.assertTrue(clc.desired_end_date == requested_end_date)
+
+        self.delete_test_data()
+
+    def test_loan_extension_waitlist_update(self):
+        import invenio.modules.circulation.api as api
+        import invenio.modules.circulation.models as models
+
+        self.create_test_data()
+
+        start_date1, end_date1 = self.create_dates(end_weeks=2)
+        start_date2, end_date2 = self.create_dates(start_weeks=3)
+        requested_end_date, _ = self.create_dates(start_weeks=4)
+        self.clcs = api.circulation.loan_items(self.cu, [self.ci],
+                                               start_date1, end_date1,
+                                               False)
+        self.clcs.extend(api.circulation.request_items(self.cu, [self.ci],
+                                                       start_date2,
+                                                       end_date2, False))
+        clc = self.clcs[0]
+        api.loan_cycle.loan_extension([clc], requested_end_date, True)
+        self.assertTrue(clc.end_date == start_date2 - datetime.timedelta(days=1))
+        self.assertTrue(clc.desired_end_date == requested_end_date)
+
+        api.loan_cycle.cancel_clcs([self.clcs[1]])
+        self.assertTrue(clc.end_date == requested_end_date)
+        self.assertTrue(clc.desired_end_date == requested_end_date)
 
         self.delete_test_data()
 

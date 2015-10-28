@@ -19,6 +19,7 @@
 
 require([
     'jquery',
-    'js/circulation/circulation',
+    'cal-heatmap',
     'notify',
+    'js/circulation/circulation',
 ], function() {});

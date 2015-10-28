@@ -58,35 +58,7 @@ function($) {
 
     var json_editor = null;
 
-    $('#entity_create').ready(function() {
-        if ($('#entity_create').length == 0) {
-            return;
-        }
-
-        var entity = $('#entity_create').attr('data-entity');
-
-        function start_json_editor(data) {
-            var data = JSON.parse(data);
-            var schema = data['schema'];
-            delete schema.properties.id;
-            json_editor = new JSONEditor($('#entity_create')[0], 
-                    {
-                        schema: data['schema'],
-                        theme: 'bootstrap3',
-                        no_additional_properties: true,
-                    });
-        }
-
-        $.ajax({
-            type: "POST",
-            url: "/circulation/api/entity/get_json_schema",
-            data: JSON.stringify(JSON.stringify({'entity': entity})),
-            success: start_json_editor,
-            contentType: 'application/json',
-        });
-    });
-
-    $('#entity_create_button').on("click", function(event){
+    $('#entity_create').on("click", function(event){
         var entity = $(this).attr('data-entity');
         var json = json_editor.getValue();
 
@@ -130,29 +102,19 @@ function($) {
         if ($('#entity_detail').length == 0) {
             return;
         }
-        var data = get_entity_id();
-        entity = data[0];
-        id = data[1];
+        var editor = $('#entity_detail');
+        var data = JSON.parse(editor.attr('data-editor_data'));
+        var schema = JSON.parse(editor.attr('data-editor_schema'));
 
-        function start_json_editor(data) {
-            data = JSON.parse(data);
-            json_editor = new JSONEditor($('#entity_detail')[0], 
-                    {
-                        schema: data['schema'],
-                        theme: 'bootstrap3',
-                        no_additional_properties: true,
-                    });
-
-            json_editor.setValue(data['data']);
+        json_editor = new JSONEditor($('#entity_detail')[0], 
+                {
+                    schema: schema,
+                    theme: 'bootstrap3',
+                    no_additional_properties: true,
+                });
+        if (Object.keys(data).length != 0){
+            json_editor.setValue(data);
         }
-
-        $.ajax({
-            type: "POST",
-            url: "/circulation/api/entity/get",
-            data: JSON.stringify(JSON.stringify({'entity': entity, 'id': id})),
-            success: start_json_editor,
-            contentType: 'application/json',
-        });
     });
 
     $('#entity_actions').on("click", function(event){

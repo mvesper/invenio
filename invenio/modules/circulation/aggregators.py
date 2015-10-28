@@ -76,7 +76,7 @@ class CirculationRecordAggregator(BaseAggregator):
 
     @classmethod
     def _get_items(cls, obj):
-        return CirculationItem.search(record_id=obj.id)
+        return CirculationItem.search('record_id:{0}'.format(obj.id))
 
 
 class CirculationItemAggregator(BaseAggregator):
@@ -110,7 +110,7 @@ class CirculationItemAggregator(BaseAggregator):
 
     @classmethod
     def _get_loan_cycles(cls, obj):
-        return CirculationLoanCycle.search(item_id=obj.id)
+        return CirculationLoanCycle.search('item:{0}'.format(obj.id))
 
 
 class CirculationLoanCycleAggregator(BaseAggregator):
@@ -142,7 +142,8 @@ class CirculationLoanCycleAggregator(BaseAggregator):
 
     @classmethod
     def _get_events(cls, obj):
-        return sorted(CirculationEvent.search(loan_cycle=obj.id),
+        query = 'loan_cycle:{0}'.format(obj.id)
+        return sorted(CirculationEvent.search(query),
                       key=lambda x: x.creation_date)
 
 
@@ -176,12 +177,14 @@ class CirculationUserAggregator(BaseAggregator):
 
     @classmethod
     def _get_current_items(cls, obj):
-        return [x.item for x in CirculationLoanCycle.search(user_id=obj.id)
+        query = 'user:{0}'.format(obj.id)
+        return [x.item for x in CirculationLoanCycle.search(query)
                 if x.current_status == 'active']
 
     @classmethod
     def _get_loan_cycles(cls, obj):
-        return CirculationLoanCycle.search(user_id=obj.id)
+        query = 'user:{0}'.format(obj.id)
+        return CirculationLoanCycle.search(query)
 
 
 class CirculationLocationAggregator(BaseAggregator):

@@ -1,0 +1,73 @@
+{% macro item(id, isbn=None, barcode=None, record=None, top_action=None) -%}
+    <div class="panel panel-default" id="item_{{id}}">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-md-10">
+                    <a href="/circulation/entities/item/{{id}}">{{id}}</a>
+                </div>
+                {% if top_action %}
+                <div class="col-md-2">
+                    {{ top_action|safe }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="panel-body">
+            {% if isbn %}
+            <div class="row">
+                <div class="col-md-2">ISBN</div>
+                <div class="col-md-10">{{isbn}}</div>
+            </div>
+            {% endif %}
+            {% if barcode %}
+            <div class="row">
+                <div class="col-md-2">Barcode</div>
+                <div class="col-md-10">{{barcode}}</div>
+            </div>
+            {% endif %}
+            {% if record %}
+            <div class="row">
+                <div class="col-md-2">record</div>
+                <div class="col-md-10">{{record}}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{%- endmacro %}
+
+{% macro user(id, ccid=None, name=None, email=None, top_action=None) -%}
+    <div class="panel panel-default" id="user_{{id}}">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-md-10">
+                    <a href="/circulation/entities/user/{{id}}">User {{id}}</a>
+                </div>
+                {% if top_action %}
+                <div class="col-md-2">
+                    {{ top_action|safe }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="panel-body">
+            {% if ccid %}
+            <div class="row">
+                <div class="col-md-2">CCID</div>
+                <div class="col-md-10">{{ccid}}</div>
+            </div>
+            {% endif %}
+            {% if name %}
+            <div class="row">
+                <div class="col-md-2">NAME</div>
+                <div class="col-md-10">{{name}}</div>
+            </div>
+            {% endif %}
+            {% if email %}
+            <div class="row">
+                <div class="col-md-2">Email</div>
+                <div class="col-md-10">{{email}}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{%- endmacro %}

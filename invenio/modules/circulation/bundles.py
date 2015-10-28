@@ -17,7 +17,7 @@
 # along with Invenio; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-"""Deposit bundles."""
+"""Circulation bundles."""
 
 from __future__ import unicode_literals
 
@@ -48,6 +48,8 @@ js2 = Bundle(
 
 styles = Bundle(
     "vendors/jquery-ui/themes/redmond/jquery-ui.css",
+    "css/other/cal-heatmap.css",
+    "css/circulation/user.css",
     output="circulation.css",
     filters="cleancss",
     weight=51
