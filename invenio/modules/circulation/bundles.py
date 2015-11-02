@@ -46,6 +46,13 @@ js2 = Bundle(
     weight=51,
 )
 
+js3 = Bundle(
+    "js/circulation/lists_init.js",
+    output="lists.js",
+    filters=RequireJSFilter(exclude=[_j, _i]),
+    weight=51,
+)
+
 styles = Bundle(
     "vendors/jquery-ui/themes/redmond/jquery-ui.css",
     "css/other/cal-heatmap.css",

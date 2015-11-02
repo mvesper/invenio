@@ -386,6 +386,7 @@ class CirculationLoanCycle(CirculationObject, db.Model):
     end_date = db.Column(db.Date)
     desired_start_date = db.Column(db.Date)
     desired_end_date = db.Column(db.Date)
+    delivery = db.Column(db.String(255))
     issued_date = db.Column(db.DateTime)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
@@ -396,6 +397,8 @@ class CirculationLoanCycle(CirculationObject, db.Model):
     STATUS_FINISHED = 'finished'
     STATUS_CANCELED = 'canceled'
     STATUS_OVERDUE = 'overdue'
+
+    DELIVERY_DEFAULT = 'Pick up'
 
 
 class CirculationUser(CirculationObject, db.Model):

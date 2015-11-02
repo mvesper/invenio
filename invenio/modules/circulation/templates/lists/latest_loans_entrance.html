@@ -20,12 +20,14 @@
 
 {%- extends 'circulation_base.html' -%}
 
+{% from 'macros.html' import date_selection %}
+
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "lists.js", "circulation.css" %}
+{% endblock %}
+
 {%- block circulation_body -%}
-<ul class="list-group">
-    {% for link, name in lists %}
-        <li type="button" class="list-group-item">
-            <a href="/circulation/lists/{{link}}">{{name}}</a>
-        </li>
-    {% endfor %}
-</ul>
+    {{ date_selection(start_date, end_date) }}
+    <button type="button" class="btn btn-block btn-success"  id="to_details" data-start_date="#circulation_date_from" data-end_date="#circulation_date_to" data-link="{{link}}">CHECK PERIOD</button>
 {%- endblock -%}

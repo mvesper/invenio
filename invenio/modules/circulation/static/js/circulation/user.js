@@ -22,68 +22,84 @@ define(
         'jquery',
     ],
 function($) {
-    $('.user_action').on('click', function(event){
-        var elem = $(this);
-        var type = elem.attr('data-type');
-        var user_id = elem.attr('data-user_id');
-        var item_id = elem.attr('data-item_id');
-        var clc_id = elem.attr('data-clc_id');
-        var action = elem.attr('data-action');
-        var start_date = $('#circulation_date_from').val();
-        var end_date = $('#circulation_date_to').val();
-        
-        var search_body = {'type': type,
-                           'user_id': user_id,
-                           'item_id': item_id,
-                           'clc_id': clc_id,
-                           'action': action,
-                           'start_date': start_date,
-                           'end_date': end_date}
+    function get_data(args) {
+        tmp =  {'user_id': null,
+                'item_id': null,
+                'clc_id': null,
+                'action': null,
+                'start_date': null,
+                'end_date': null,
+                'requested_end_date': null,
+                'waitlist': null,
+                'delivery': null}
 
-        function success(data){
-            window.location.reload();
+        for (var key in args) {
+            if (args.hasOwnProperty(key)) {
+              tmp[key] = args[key];
+            }
         }
+
+        return tmp;
+    }
+
+    function perform_user_action(elem) {
+        var user_id = elem.attr('data-user_id');
+        user_id = user_id === undefined? null : user_id;
+        var item_id = elem.attr('data-item_id');
+        item_id = item_id === undefined? null : item_id;
+        var clc_id = elem.attr('data-clc_id');
+        clc_id = clc_id === undefined? null : clc_id;
+        var action = elem.attr('data-action');
+        action = action === undefined? null : action;
+
+        var start_date = $('#circulation_date_from').val();
+        start_date = start_date === undefined? null : start_date;
+        var end_date = $('#circulation_date_to').val();
+        end_date = end_date === undefined? null : end_date;
+
+        var waitlist = $('#circulation_option_waitlist').is(':checked');
+        waitlist = waitlist === undefined? null : waitlist;
+        var delivery = $('#circulation_option_delivery').val();
+        delivery = delivery === undefined? null : delivery;
+        
+        var search_body = get_data({'user_id': user_id,
+                                    'item_id': item_id,
+                                    'clc_id': clc_id,
+                                    'action': action,
+                                    'start_date': start_date,
+                                    'end_date': end_date,
+                                    'waitlist': waitlist,
+                                    'delivery': delivery})
 
         $.ajax({
             type: "POST",
             url: "/circulation/api/user/run_action",
             data: JSON.stringify(JSON.stringify(search_body)),
-            success: success,
+            success: function(){window.location.reload();},
             contentType: 'application/json',
         });
+
+    }
+
+    $('.user_action').on('click', function(event){
+        perform_user_action($(this));
     });
 
     var _clc_id = null;
+    var _item_id = null;
 
     $('.current_hold_user_action').on('click', function(event){
-        var user_id = $(this).attr('data-user_id');
-        var clc_id = $(this).attr('data-clc_id');
         var action = $(this).attr('data-action');
-        
+
         if (action == 'extension'){
             var data = JSON.parse($(this).attr('data-cal_data'));
             cal.update(data);
-            _clc_id = clc_id;
+            _clc_id = $(this).attr('data-clc_id');
+            _item_id = $(this).attr('data-item_id');
             $('#myModal').modal();
             return
         }
-
-        var user_action = {'user_id': user_id,
-                           'clc_id': clc_id,
-                           'action': action,
-                           'requested_end_date': null}
-
-        function success(data){
-            window.location.reload();
-        }
-
-        $.ajax({
-            type: "POST",
-            url: "/circulation/api/user/run_current_hold_action",
-            data: JSON.stringify(JSON.stringify(user_action)),
-            success: success,
-            contentType: 'application/json',
-        });
+        perform_user_action($(this));
     });
 
     $('#entity_detail').ready(function() {
@@ -139,10 +155,9 @@ function($) {
     $('.record_item').mouseenter(function(){
         var data = JSON.parse($(this).attr('data-cal_data'));
         var range = parseInt($(this).attr('data-cal_range'));
-        if (range == 0){
-            return
+        if (range != 0){
+            cal.update(data);
         }
-        cal.update(data);
 
         var warnings = JSON.parse($(this).attr('data-warnings'));
         if (warnings.length == 0) {
@@ -192,7 +207,7 @@ function($) {
 
     $('#circulation_extension_date').on('change', function(event){
         var body = {'action': 'extension',
-                    'clc_id': 1,
+                    'clc_id': _clc_id,
                     'requested_end_date': $('#circulation_extension_date').val()}
 
         function success(data){
@@ -219,19 +234,16 @@ function($) {
 
     $('#circulation_extension_button').on('click', function(event){
         var requested_end_date = $('#circulation_extension_date').val();
-        var user_action = {'clc_id': _clc_id,
-                           'action': 'extension',
-                           'requested_end_date': requested_end_date}
-
-        function success(data){
-            window.location.reload();
-        }
+        var search_body = get_data({'item_id': _item_id,
+                                    'clc_id': _clc_id,
+                                    'action': 'extension',
+                                    'requested_end_date': requested_end_date})
 
         $.ajax({
             type: "POST",
-            url: "/circulation/api/user/run_current_hold_action",
-            data: JSON.stringify(JSON.stringify(user_action)),
-            success: success,
+            url: "/circulation/api/user/run_action",
+            data: JSON.stringify(JSON.stringify(search_body)),
+            success: function(){window.location.reload();},
             contentType: 'application/json',
         });
     });

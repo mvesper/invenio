@@ -89,7 +89,8 @@ def _check_loan_period(user, items, start_date, end_date):
 '''
 
 
-def try_loan_items(user, items, start_date, end_date, waitlist=False):
+def try_loan_items(user, items, start_date, end_date,
+                   waitlist=False, delivery=None):
     exceptions = []
     try:
         _check_items(items)
@@ -129,7 +130,8 @@ def try_loan_items(user, items, start_date, end_date, waitlist=False):
         raise ValidationExceptions(exceptions)
 
 
-def loan_items(user, items, start_date, end_date, waitlist=False):
+def loan_items(user, items, start_date, end_date,
+               waitlist=False, delivery=None):
     try:
         try_loan_items(user, items, start_date, end_date, waitlist)
         desired_start_date = start_date
@@ -146,7 +148,9 @@ def loan_items(user, items, start_date, end_date, waitlist=False):
                 raise e
         else:
             raise e
-
+    
+    if delivery is None:
+        delivery = CirculationLoanCycle.DELIVERY_DEFAULT
     group_uuid = str(uuid.uuid4())
     res = []
     for item in items:
@@ -160,7 +164,8 @@ def loan_items(user, items, start_date, end_date, waitlist=False):
                                        desired_start_date=desired_start_date,
                                        desired_end_date=desired_end_date,
                                        issued_date=datetime.datetime.now(),
-                                       group_uuid=group_uuid)
+                                       group_uuid=group_uuid,
+                                       delivery=delivery)
         res.append(clc)
 
         create_event(user=user, item=item, loan_cycle=clc,
@@ -173,7 +178,8 @@ def loan_items(user, items, start_date, end_date, waitlist=False):
     return res
 
 
-def try_request_items(user, items, start_date, end_date, waitlist=False):
+def try_request_items(user, items, start_date, end_date,
+                      waitlist=False, delivery=None):
     exceptions = []
     try:
         _check_items(items)
@@ -214,7 +220,8 @@ def try_request_items(user, items, start_date, end_date, waitlist=False):
         raise ValidationExceptions(exceptions)
 
 
-def request_items(user, items, start_date, end_date, waitlist=False):
+def request_items(user, items, start_date, end_date,
+                  waitlist=False, delivery=None):
     try:
         try_request_items(user, items, start_date, end_date, waitlist)
         desired_start_date = start_date
@@ -229,6 +236,9 @@ def request_items(user, items, start_date, end_date, waitlist=False):
         else:
             raise e
 
+    if delivery is None:
+        delivery = CirculationLoanCycle.DELIVERY_DEFAULT
+
     group_uuid = str(uuid.uuid4())
     res = []
     for item in items:
@@ -240,7 +250,8 @@ def request_items(user, items, start_date, end_date, waitlist=False):
                                        desired_start_date=desired_start_date,
                                        desired_end_date=desired_end_date,
                                        issued_date=datetime.datetime.now(),
-                                       group_uuid=group_uuid)
+                                       group_uuid=group_uuid,
+                                       delivery=delivery)
         res.append(clc)
 
         create_event(user=user, item=item, loan_cycle=clc,

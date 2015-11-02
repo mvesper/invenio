@@ -1,0 +1,1 @@
+DEFAULT_LOAN_PERIOD = 28 # in days
