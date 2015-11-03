@@ -203,6 +203,11 @@ class DateException(Exception):
         self.suggested_dates = suggested_dates
         self.contained_dates = contained_dates
 
+        if self.suggested_dates is None and self.contained_dates is None:
+            msg = 'The date is already taken. There are no valid suggestions'
+            self.message = msg
+            return
+
         tmp = ['{0} - {1}'.format(start, end)
                for start, end in self.suggested_dates[:-1]]
         tmp.append('{0} - ...'.format(self.suggested_dates[-1]))

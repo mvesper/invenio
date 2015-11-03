@@ -98,8 +98,7 @@ def _get_record_items(record_id, user, start_date, end_date, waitlist):
             api.circulation.try_request_items(user=user, items=[item],
                                               start_date=start_date,
                                               end_date=end_date,
-                                              waitlist=waitlist,
-                                              delivery=delivery)
+                                              waitlist=waitlist)
             request = True
         except ValidationExceptions as e:
             exceptions = [x[0] for x in e.exceptions]
