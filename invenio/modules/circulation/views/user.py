@@ -54,7 +54,10 @@ def _get_current(user_id, status):
 @blueprint.route('/user/<user_id>/record/<record_id>', methods=['GET'])
 @blueprint.route('/user/<user_id>/record/<record_id>/<state>', methods=['GET'])
 def user_record_actions(user_id, record_id, state=None):
-    user = models.CirculationUser.get(user_id)
+    try:
+        user = models.CirculationUser.get(user_id)
+    except Exception:
+        user = None
     record = models.CirculationRecord.get(record_id)
 
     start_date, end_date, waitlist, delivery = _get_state(state)

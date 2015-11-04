@@ -33,7 +33,9 @@
 
 {%- block circulation_body -%}
 <div id="circulation_search_result">
-    {{ _user(id=user.id, ccid=user.ccid, name=user.name, email=user.email) }}
+    {% if user %}
+        {{ _user(id=user.id, ccid=user.ccid, name=user.name, email=user.email) }}
+    {% endif %}
 
     <div class="panel panel-default" id="record_{{record.id}}">
         <div class="panel-heading">

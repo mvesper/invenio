@@ -100,6 +100,9 @@ class CirculationObject(object):
     @classmethod
     def get(cls, id):
         obj = cls.query.options(subqueryload_all('*')).get(id)
+        if obj is None:
+            msg = "A {0} object with id {1} doesn't exist"
+            raise Exception(msg.format(cls.__name__, id))
         data = jsonpickle.decode(obj._data)
 
         if hasattr(cls, '_construction_schema'):
@@ -303,6 +306,8 @@ class CirculationRecord(CirculationObject):
     @classmethod
     def get(cls, id):
         json = get_record(id)
+        if json is None:
+            raise Exception("A record with id {0} doesn't exist".format(id))
         json['id'] = id
 
         obj = CirculationRecord()

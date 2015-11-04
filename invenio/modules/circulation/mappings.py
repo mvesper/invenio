@@ -1,3 +1,13 @@
+def add_copy_to(mappings):
+    name = mappings['mappings'].keys()[0]
+    for key, value in mappings['mappings'][name]['properties'].items():
+        try:
+            value['copy_to'].append('global_fulltext')
+        except AttributeError:
+            value['copy_to'] = [value['copy_to'], 'global_fulltext']
+        except KeyError:
+            value['copy_to'] = ['global_fulltext']
+
 item_mappings = {'mappings': {
                     'circulation_item': {
                         '_all': {'enabled': True},
@@ -17,10 +27,21 @@ item_mappings = {'mappings': {
                             'barcode': {
                                 'type': 'string',
                                 'index': 'not_analyzed'},
+                            'current_status': {
+                                'type': 'string',
+                                'index': 'not_analyzed'},
+                            'record': {
+                                'properties': {
+                                    'title': {
+                                        'type': 'string',
+                                        'copy_to': ['global_fulltext', 'title']}
+                                    }
+                                },
                             }
                         }
                     }
                  }
+add_copy_to(item_mappings)
 
 loan_cycle_mappings = {'mappings': {
                             'circulation_loan_cycle': {
