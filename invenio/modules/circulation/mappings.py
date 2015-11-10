@@ -30,11 +30,13 @@ item_mappings = {'mappings': {
                             'current_status': {
                                 'type': 'string',
                                 'index': 'not_analyzed'},
+                            'title': {
+                                'type': 'string',},
                             'record': {
                                 'properties': {
                                     'title': {
                                         'type': 'string',
-                                        'copy_to': ['global_fulltext', 'title']}
+                                        'copy_to': ['global_fulltext', 'foo']}
                                     }
                                 },
                             }
@@ -48,15 +50,18 @@ loan_cycle_mappings = {'mappings': {
                                 '_all': {'enabled': True},
                                 'properties': {
                                     'id': {
-                                        'type': 'integer',
+                                        'type': 'string',
                                         'index': 'not_analyzed'},
                                     'group_uuid': {
                                         'type': 'string',
                                         'index': 'not_analyzed'},
+                                    'global_fulltext': {
+                                        'type': 'string',},
                                     }
                                 }
                             }
                        }
+add_copy_to(loan_cycle_mappings)
 
 user_mappings = {'mappings': {
                     'circulation_user': {
@@ -75,6 +80,7 @@ user_mappings = {'mappings': {
                         }
                     }
                  }
+add_copy_to(user_mappings)
 
 location_mappings = {'mappings': {
                         'circulation_location': {
@@ -90,6 +96,7 @@ location_mappings = {'mappings': {
                             }
                         }
                      }
+add_copy_to(location_mappings)
 
 event_mappings = {'mappings': {
                     'circulation_event': {
@@ -116,10 +123,13 @@ event_mappings = {'mappings': {
                             'mail_template_id': {
                                 'type': 'integer',
                                 'index': 'not_analyzed'},
+                            'global_fulltext': {
+                                'type': 'string',},
                             }
                         }
                     }
                   }
+add_copy_to(event_mappings)
 
 mail_template_mappings = {'mappings': {
                             'circulation_mail_template': {
@@ -132,6 +142,7 @@ mail_template_mappings = {'mappings': {
                                 }
                             }
                           }
+add_copy_to(mail_template_mappings)
 
 loan_rule_mappings = {'mappings': {
                         'circulation_loan_rule': {
@@ -147,7 +158,7 @@ loan_rule_mappings = {'mappings': {
                             }
                         }
                       }
-
+add_copy_to(loan_rule_mappings)
 
 mappings = {'Item': item_mappings,
             'Loan Cycle': loan_cycle_mappings,

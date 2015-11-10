@@ -243,7 +243,11 @@ class CirculationObject(object):
         elif isinstance(value, tuple):
             return [cls._encode(val) for val in value]
         elif isinstance(value, CirculationObject):
-            return value.id
+            # NEW
+            return {key: cls._encode(val) for key, val
+                    in value.__dict__.items()
+                    if key not in ['_data', '_sa_instance_state']}
+            # OLDreturn value.id
         else:
             return value
 
