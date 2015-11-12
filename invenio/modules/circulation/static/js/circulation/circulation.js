@@ -20,8 +20,9 @@
 define(
     [
         'jquery',
+        'cal-heatmap',
     ],
-function($) {
+function($, ch) {
     function get_circulation_state() {
         var url_parts = document.URL.split('/');
 

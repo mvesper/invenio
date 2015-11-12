@@ -11,7 +11,7 @@ def create(invenio_user_id, ccid, name, address, mailbox, email, phone,
                              mailbox=mailbox, email=email, phone=phone,
                              notes=notes, user_group=user_group)
 
-    create_event(user=cu, event=CirculationEvent.EVENT_USER_CREATE)
+    create_event(user_id=cu.id, event=CirculationEvent.EVENT_USER_CREATE)
 
     return cu
 
@@ -23,12 +23,12 @@ def update(cu, **kwargs):
                                                 current_items[key],
                                                 changed[key])
                        for key in changed]
-        create_event(user=cu, event=CirculationEvent.EVENT_USER_CHANGE,
+        create_event(user_id=cu.id, event=CirculationEvent.EVENT_USER_CHANGE,
                      description=', '.join(changes_str))
 
 
 def delete(cu):
-    create_event(user=cu, event=CirculationEvent.EVENT_USER_DELETE)
+    create_event(user_id=cu.id, event=CirculationEvent.EVENT_USER_DELETE)
     cu.delete()
 
 

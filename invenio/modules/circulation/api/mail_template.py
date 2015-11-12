@@ -9,7 +9,10 @@ def create(template_name, subject, header, content):
                                       subject=subject, header=header,
                                       content=content)
 
-    create_event(mail_template=cmt, event=CirculationEvent.EVENT_MT_CREATE)
+    create_event(mail_template_id=cmt.id,
+                 event=CirculationEvent.EVENT_MT_CREATE)
+
+    return cmt
 
 
 def update(cmt, **kwargs):
@@ -19,12 +22,14 @@ def update(cmt, **kwargs):
                                                 current_items[key],
                                                 changed[key])
                        for key in changed]
-        create_event(mail_template=cmt, event=CirculationEvent.EVENT_MT_CHANGE,
+        create_event(mail_template_id=cmt.id,
+                     event=CirculationEvent.EVENT_MT_CHANGE,
                      description=', '.join(changes_str))
 
 
 def delete(cmt):
-    create_event(mail_template=cmt, event=CirculationEvent.EVENT_MT_DELETE)
+    create_event(mail_template_id=cmt.id,
+                 event=CirculationEvent.EVENT_MT_DELETE)
     cmt.delete()
 
 

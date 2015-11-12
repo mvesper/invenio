@@ -169,7 +169,7 @@ def loan_items(user, items, start_date, end_date,
                                        delivery=delivery)
         res.append(clc)
 
-        create_event(user=user, item=item, loan_cycle=clc,
+        create_event(user_id=user.id, item_id=item.id, loan_cycle_id=clc.id,
                      event=CirculationEvent.EVENT_CLC_CREATED_LOAN)
 
     email_notification('item_loan', 'john.doe@cern.ch', user.email,
@@ -255,7 +255,7 @@ def request_items(user, items, start_date, end_date,
                                        delivery=delivery)
         res.append(clc)
 
-        create_event(user=user, item=item, loan_cycle=clc,
+        create_event(user_id=user.id, item_id=item.id, loan_cycle_id=clc.id,
                      event=CirculationEvent.EVENT_CLC_CREATED_REQUEST)
 
     email_notification('item_loan', 'john.doe@cern.ch', user.email,
@@ -300,5 +300,6 @@ def return_items(items):
         clc.current_status = CirculationLoanCycle.STATUS_FINISHED
         clc.save()
         update_waitlist(clc)
-        create_event(user=clc.user, item=item, loan_cycle=clc,
+        create_event(user_id=clc.user.id, item_id=item.id,
+                     loan_cycle_id=clc.id,
                      event=CirculationEvent.EVENT_CLC_FINISHED)

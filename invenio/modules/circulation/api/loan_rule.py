@@ -11,7 +11,7 @@ def create(item_group, user_group, location_code, loan_period,
                                   loan_period=loan_period,
                                   extension_allowed=extension_allowed)
 
-    create_event(loan_rule=clr, event=CirculationEvent.EVENT_LR_CREATE)
+    create_event(loan_rule_id=clr.id, event=CirculationEvent.EVENT_LR_CREATE)
 
     return clr
 
@@ -23,12 +23,13 @@ def update(clr, **kwargs):
                                                 current_items[key],
                                                 changed[key])
                        for key in changed]
-        create_event(loan_rule=clr, event=CirculationEvent.EVENT_LR_CHANGE,
+        create_event(loan_rule_id=clr.id,
+                     event=CirculationEvent.EVENT_LR_CHANGE,
                      description=', '.join(changes_str))
 
 
 def delete(clr):
-    create_event(loan_rule=clr, event=CirculationEvent.EVENT_LR_DELETE)
+    create_event(loan_rule_id=clr.id, event=CirculationEvent.EVENT_LR_DELETE)
     clr.delete()
 
 

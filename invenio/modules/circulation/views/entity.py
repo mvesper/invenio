@@ -134,10 +134,12 @@ def entity_new(entity):
     # entering the id is going to break and doesn't make sense, so it will be
     # removed here
     editor_schema = aggregators[entity]._json_schema
-    try:
-        del editor_schema['properties']['id']
-    except KeyError:
-        pass
+
+    for key in ['id', 'group_uuid', 'creation_date']:
+        try:
+            del editor_schema['properties'][key]
+        except KeyError:
+            pass
 
     editor_schema = json.dumps(editor_schema, default=datetime_serial)
     return render_template('entities/entity_create.html',

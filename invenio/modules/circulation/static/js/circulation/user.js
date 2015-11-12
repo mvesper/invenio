@@ -20,8 +20,9 @@
 define(
     [
         'jquery',
+        'cal-heatmap',
     ],
-function($) {
+function($, ch) {
     function get_data(args) {
         tmp =  {'user_id': null,
                 'item_id': null,

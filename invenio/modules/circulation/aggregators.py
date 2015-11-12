@@ -118,6 +118,8 @@ class CirculationLoanCycleAggregator(BaseAggregator):
                     'title': 'Loan Cycle',
                     'properties': {
                         'id': {'type': 'integer'},
+                        'item_id': {'type': 'integer'},
+                        'user_id': {'type': 'integer'},
                         'group_uuid': {'type': 'string'},
                         'current_status': {'type': 'string'},
                         'start_date': {'type': 'string'},
@@ -125,6 +127,7 @@ class CirculationLoanCycleAggregator(BaseAggregator):
                         'desired_start_date': {'type': 'string'},
                         'desired_end_date': {'type': 'string'},
                         'issued_date': {'type': 'string'},
+                        'requested_extension_end_date': {'type': 'string'},
                         }
                     }
 
@@ -142,7 +145,7 @@ class CirculationLoanCycleAggregator(BaseAggregator):
 
     @classmethod
     def _get_events(cls, obj):
-        query = 'loan_cycle:{0}'.format(obj.id)
+        query = 'loan_cycle_id:{0}'.format(obj.id)
         return sorted(CirculationEvent.search(query),
                       key=lambda x: x.creation_date)
 
@@ -209,7 +212,7 @@ class CirculationEventAggregator(BaseAggregator):
                         'user_id': {'type': 'integer'},
                         'item_id': {'type': 'integer'},
                         'loan_cycle_id': {'type': 'integer'},
-                        'location': {'type': 'integer'},
+                        'location_id': {'type': 'integer'},
                         'loan_rule_id': {'type': 'integer'},
                         'mail_template_id': {'type': 'integer'},
                         'event': {'type': 'string'},
@@ -241,6 +244,7 @@ class CirculationLoanRuleAggregator(BaseAggregator):
                         'id': {'type': 'integer'},
                         'item_group': {'type': 'string'},
                         'user_group': {'type': 'string'},
+                        'extension_allowed': {'type': 'boolean'},
                         'location_code': {'type': 'string'},
                         'loan_period': {'type': 'integer'},
                         }

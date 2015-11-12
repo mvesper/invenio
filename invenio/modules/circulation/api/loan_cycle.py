@@ -14,19 +14,23 @@ from invenio.modules.circulation.api.utils import update as _update
 from invenio.modules.circulation.api.event import create as create_event
 
 
-def create(item, user, current_status, start_date, end_date,
+def create(item_id, user_id, current_status, start_date, end_date,
            desired_start_date, desired_end_date,
-           requsted_extension_end_date, issued_date):
+           requested_extension_end_date, issued_date):
 
-    clc = CirculationLoanCycle.new(item=item, user=user,
-                                   current_status=current_status,
-                                   start_date=start_date, end_date=end_date,
-                                   desired_start_date=desired_start_date,
-                                   desired_end_date=desired_end_date,
-                                   requested_extension_end_date=requested_extension_end_date,
-                                   issued_date=issued_date)
+    clc = CirculationLoanCycle.new(
+            item_id=item_id, user_id=user_id,
+            current_status=current_status,
+            start_date=start_date, end_date=end_date,
+            desired_start_date=desired_start_date,
+            desired_end_date=desired_end_date,
+            requested_extension_end_date=requested_extension_end_date,
+            issued_date=issued_date
+        )
 
-    create_event(loan_cycle=clc, event=CirculationEvent.EVENT_CLC_CREATE)
+    create_event(loan_cycle_id=clc.id, event=CirculationEvent.EVENT_CLC_CREATE)
+
+    return clc
 
 
 def update(clc, **kwargs):
@@ -36,12 +40,14 @@ def update(clc, **kwargs):
                                                 current_items[key],
                                                 changed[key])
                        for key in changed]
-        create_event(loan_cycle=clc, event=CirculationEvent.EVENT_ITEM_CHANGE,
+
+        create_event(loan_cycle_id=clc.id,
+                     event=CirculationEvent.EVENT_ITEM_CHANGE,
                      description=', '.join(changes_str))
 
 
 def delete(clc):
-    create_event(loan_cycle=clc, event=CirculationEvent.EVENT_CLC_DELETE)
+    create_event(loan_cycle_id=clc.id, event=CirculationEvent.EVENT_CLC_DELETE)
     clc.delete()
 
 
@@ -62,7 +68,8 @@ def cancel_clcs(clcs):
     for clc in clcs:
         clc.current_status = CirculationLoanCycle.STATUS_CANCELED
         clc.save()
-        create_event(loan_cycle=clc, event=CirculationEvent.EVENT_CLC_CANCELED)
+        create_event(loan_cycle_id=clc.id,
+                     event=CirculationEvent.EVENT_CLC_CANCELED)
 
         update_waitlist(clc)
 
@@ -153,7 +160,8 @@ def overdue_clcs(clcs):
     for clc in clcs:
         clc.additional_statuses.append(CirculationLoanCycle.STATUS_OVERDUE)
         clc.save()
-        create_event(loan_cycle=clc, event=CirculationEvent.EVENT_CLC_OVERDUE)
+        create_event(loan_cycle_id=clc.id,
+                     event=CirculationEvent.EVENT_CLC_OVERDUE)
 
 
 def _extension_allowed(user, items):
@@ -225,7 +233,7 @@ def loan_extension(clcs, requested_end_date, waitlist=False):
         clc.desired_end_date = requested_end_date
         clc.end_date = new_end_date
         clc.save()
-        create_event(loan_cycle=clc,
+        create_event(loan_cycle_id=clc.id,
                      event=CirculationEvent.EVENT_CLC_LOAN_EXTENSION)
 
 

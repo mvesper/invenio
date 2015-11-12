@@ -4,7 +4,7 @@ def generate():
     import invenio.modules.circulation.models as models
     import invenio.modules.circulation.api as api
 
-    location1 = api.location.create('ccl', 'CERN central librar', '')
+    location1 = api.location.create('ccl', 'CERN central library', '')
 
     item1 = api.item.create(30, 1, 'isbn1', 'barcode1', 'books', 'shelf1',
                             'vol1', '', 'on_shelf',

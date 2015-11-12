@@ -1,12 +1,18 @@
 from invenio.modules.circulation.models import CirculationEvent
 
 
-def create(user=None, item=None, loan_cycle=None, location=None,
-           mail_template=None, loan_rule=None, event=None, description=None):
-    CirculationEvent.new(user=user, item=item, loan_cycle=loan_cycle,
-                         location=location, mail_template=mail_template,
-                         loan_rule=loan_rule,
-                         event=event, description=description)
+def create(user_id=None, item_id=None, loan_cycle_id=None, location_id=None,
+           mail_template_id=None, loan_rule_id=None,
+           event=None, description=None):
+
+    ce = CirculationEvent.new(user_id=user_id, item_id=item_id,
+                              loan_cycle_id=loan_cycle_id,
+                              location_id=location_id,
+                              mail_template_id=mail_template_id,
+                              loan_rule_id=loan_rule_id,
+                              event=event, description=description)
+
+    return ce
 
 
 def update(ce, **kwargs):

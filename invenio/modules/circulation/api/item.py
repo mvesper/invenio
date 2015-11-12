@@ -36,7 +36,7 @@ def create(record_id, location_id, isbn, barcode, collection, shelf_number,
                              item_group=item_group)
 
     description = 'Created in status: {0}'.format(current_status)
-    create_event(item=ci, event=CirculationEvent.EVENT_ITEM_CREATE,
+    create_event(item_id=ci.id, event=CirculationEvent.EVENT_ITEM_CREATE,
                  description=description)
     ci.record = CirculationRecord.get(ci.record_id)
     return ci
@@ -49,12 +49,12 @@ def update(item, **kwargs):
                                                 current_items[key],
                                                 changed[key])
                        for key in changed]
-        create_event(item=item, event=CirculationEvent.EVENT_ITEM_CHANGE,
+        create_event(item_id=item.id, event=CirculationEvent.EVENT_ITEM_CHANGE,
                      description=', '.join(changes_str))
 
 
 def delete(item):
-    create_event(item=item, event=CirculationEvent.EVENT_ITEM_DELETE)
+    create_event(item_id=item.id, event=CirculationEvent.EVENT_ITEM_DELETE)
     item.delete()
 
 
@@ -78,7 +78,8 @@ def lose_items(items):
     for item in items:
         item.current_status = 'missing'
         item.save()
-        create_event(item=item, event=CirculationEvent.EVENT_ITEM_MISSING)
+        create_event(item_id=item.id,
+                     event=CirculationEvent.EVENT_ITEM_MISSING)
 
         """
         clcs = [x for status in ['requested', 'on_loan']
@@ -115,7 +116,7 @@ def return_missing_items(items):
     for item in items:
         item.current_status = 'on_shelf'
         item.save()
-        create_event(item=item,
+        create_event(item_id=item.id,
                      event=CirculationEvent.EVENT_ITEM_RETURNED_MISSING)
 
 
@@ -139,7 +140,7 @@ def process_items(items, description):
     for item in items:
         item.current_status = CirculationItem.STATUS_IN_PROCESS
         item.save()
-        create_event(item=item,
+        create_event(item_id=item.id,
                      event=CirculationEvent.EVENT_ITEM_IN_PROCESS,
                      description=description)
 

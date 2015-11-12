@@ -23,7 +23,7 @@
 
 {%- block entity_search_result -%}
 {% for entity in entities %}
-    {% set delete_button = '<button type="button" class="btn btn-danger btn-block entity_delete" id="delete_' + entity.id|string + '">Remove</button>' %}
+    {% set delete_button = '<button type="button" class="btn btn-danger btn-block entity_delete" id="delete_' + entity.id|string + '">Delete</button>' %}
     {{ user(id=entity.id, ccid=entity.ccid, name=entity.name, top_action=delete_button) }}
 {% endfor %}
 {%- endblock -%}

@@ -19,6 +19,7 @@
 #}
 
 {%- extends 'circulation_base.html' -%}
+{% from 'macros.html' import editor %}
 
 {% block global_bundles %}
   {{ super() }}
@@ -27,7 +28,7 @@
 
 {%- block circulation_body -%}
     <div class="row">
-        <div class="col-md-10" id="entity_detail"></div>
+        <div class="col-md-10">{{ editor(editor_data, editor_schema) }}</div>
         <div class="col-md-2" id="entity_update">
             <button type="button" class="btn btn-default btn-success btn-block" id="entity_update_button">UPDATE</button>
         </div>

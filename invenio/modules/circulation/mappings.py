@@ -80,6 +80,17 @@ user_mappings = {'mappings': {
                                 'index': 'not_analyzed'},
                             'name': {
                                 'type': 'string'},
+                            'email': {
+                                'type': 'string'},
+                            'address': {
+                                'type': 'string'},
+                            'phone': {
+                                'type': 'string',
+                                'index': 'not_analyzed'},
+                            'mailbox': {
+                                'type': 'string',},
+                            'user_group': {
+                                'type': 'string',},
                             }
                         }
                     }
@@ -171,6 +182,15 @@ loan_rule_mappings = {'mappings': {
                                     'index': 'not_analyzed'},
                                 'user_group': {
                                     'type': 'string',
+                                    'index': 'not_analyzed'},
+                                'item_group': {
+                                    'type': 'string',
+                                    'index': 'not_analyzed'},
+                                'location_code': {
+                                    'type': 'string',
+                                    'index': 'not_analyzed'},
+                                'loan_period': {
+                                    'type': 'integer',
                                     'index': 'not_analyzed'},
                                 },
                             }

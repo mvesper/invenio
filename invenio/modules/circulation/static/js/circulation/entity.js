@@ -62,6 +62,16 @@ function($) {
         var entity = $(this).attr('data-entity');
         var json = json_editor.getValue();
 
+        // This could end up annoying, currently done because integer fields
+        // in json schema don't allow null value
+        for (var key in json) {
+            if (json.hasOwnProperty(key)) {
+                if (json[key] == 0) {
+                    json[key] = null;
+                }
+            }
+        }
+
         var search_body = {'entity': entity, 'data': json}
 
         function success(data) {
