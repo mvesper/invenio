@@ -45,7 +45,7 @@ def _get_cal_heatmap_dates(items):
 
     res = set()
     for item in items:
-        query = 'item:{0}'.format(item.id)
+        query = 'item_id:{0}'.format(item.id)
         statuses = [models.CirculationLoanCycle.STATUS_FINISHED,
                     models.CirculationLoanCycle.STATUS_CANCELED]
         clcs = models.CirculationLoanCycle.search(query)
@@ -62,7 +62,7 @@ def _get_cal_heatmap_range(items):
     min_dates = []
     max_dates = []
     for item in items:
-        query = 'item:{0}'.format(item.id)
+        query = 'item_id:{0}'.format(item.id)
         statuses = [models.CirculationLoanCycle.STATUS_FINISHED,
                     models.CirculationLoanCycle.STATUS_CANCELED]
         clcs = models.CirculationLoanCycle.search(query)

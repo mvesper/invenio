@@ -13,7 +13,8 @@ class OverduePendingRequests(object):
 
         res = []
         for item in [clc.item for clc in CirculationLoanCycle.search(query)]:
-            query1 = 'current_status:{0} item:{1}'.format(status_req, item.id)
+            query1 = 'current_status:{0} item_id:{1}'.format(status_req,
+                                                             item.id)
             if CirculationLoanCycle.search(query1):
                 res.append(item)
 

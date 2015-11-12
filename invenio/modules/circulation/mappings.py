@@ -1,5 +1,7 @@
 def add_copy_to(mappings):
     name = mappings['mappings'].keys()[0]
+    full_text = {'type': 'string'}
+    mappings['mappings'][name]['properties']['global_fulltext'] = full_text
     for key, value in mappings['mappings'][name]['properties'].items():
         try:
             value['copy_to'].append('global_fulltext')
@@ -36,7 +38,7 @@ item_mappings = {'mappings': {
                                 'properties': {
                                     'title': {
                                         'type': 'string',
-                                        'copy_to': ['global_fulltext', 'foo']}
+                                        'copy_to': ['global_fulltext']}
                                     }
                                 },
                             }
@@ -76,6 +78,8 @@ user_mappings = {'mappings': {
                             'ccid': {
                                 'type': 'string',
                                 'index': 'not_analyzed'},
+                            'name': {
+                                'type': 'string'},
                             }
                         }
                     }
@@ -92,6 +96,10 @@ location_mappings = {'mappings': {
                                 'code': {
                                     'type': 'string',
                                     'index': 'not_analyzed'},
+                                'name': {
+                                    'type': 'string',},
+                                'notes': {
+                                    'type': 'string',},
                                 }
                             }
                         }
@@ -114,7 +122,7 @@ event_mappings = {'mappings': {
                             'loan_cycle_id': {
                                 'type': 'integer',
                                 'index': 'not_analyzed'},
-                            'location': {
+                            'location_id': {
                                 'type': 'integer',
                                 'index': 'not_analyzed'},
                             'loan_rule_id': {
@@ -123,6 +131,8 @@ event_mappings = {'mappings': {
                             'mail_template_id': {
                                 'type': 'integer',
                                 'index': 'not_analyzed'},
+                            'event': {
+                                'type': 'string',},
                             'global_fulltext': {
                                 'type': 'string',},
                             }
@@ -138,6 +148,14 @@ mail_template_mappings = {'mappings': {
                                     'id': {
                                         'type': 'integer',
                                         'index': 'not_analyzed'},
+                                    'template_name': {
+                                        'type': 'string',},
+                                    'subject': {
+                                        'type': 'string',},
+                                    'header': {
+                                        'type': 'string',},
+                                    'content': {
+                                        'type': 'string',},
                                     }
                                 }
                             }

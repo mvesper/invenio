@@ -110,7 +110,7 @@ class CirculationItemAggregator(BaseAggregator):
 
     @classmethod
     def _get_loan_cycles(cls, obj):
-        return CirculationLoanCycle.search('item:{0}'.format(obj.id))
+        return CirculationLoanCycle.search('item_id:{0}'.format(obj.id))
 
 
 class CirculationLoanCycleAggregator(BaseAggregator):
@@ -177,13 +177,13 @@ class CirculationUserAggregator(BaseAggregator):
 
     @classmethod
     def _get_current_items(cls, obj):
-        query = 'user:{0}'.format(obj.id)
+        query = 'user_id:{0}'.format(obj.id)
         return [x.item for x in CirculationLoanCycle.search(query)
                 if x.current_status == 'active']
 
     @classmethod
     def _get_loan_cycles(cls, obj):
-        query = 'user:{0}'.format(obj.id)
+        query = 'user_id:{0}'.format(obj.id)
         return CirculationLoanCycle.search(query)
 
 
@@ -245,16 +245,3 @@ class CirculationLoanRuleAggregator(BaseAggregator):
                         'loan_period': {'type': 'integer'},
                         }
                     }
-
-
-# Display Name , link name, entity
-aggregators = [('Record', 'record', CirculationRecordAggregator),
-               ('User', 'user', CirculationUserAggregator),
-               ('Item', 'item', CirculationItemAggregator),
-               ('Loan Cycle', 'loan_cycle', CirculationLoanCycleAggregator),
-               ('Location', 'location', CirculationLocationAggregator),
-               ('Event', 'event', CirculationEventAggregator),
-               ('Mail Template', 'mail_template',
-                CirculationMailTemplateAggregator),
-               ('Loan Rule', 'loan_rule',
-                CirculationLoanRuleAggregator)]

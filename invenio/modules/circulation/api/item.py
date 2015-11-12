@@ -85,7 +85,7 @@ def lose_items(items):
                 for x in CirculationLoanCycle.search(item=item,
                                                      current_status=status)]
         """
-        query = 'item:{0} current_status:{1}'
+        query = 'item_id:{0} current_status:{1}'
         statuses = [CirculationLoanCycle.STATUS_REQUESTED,
                     CirculationLoanCycle.STATUS_ON_LOAN]
         clcs = [x for status in statuses
@@ -162,7 +162,7 @@ def overdue_items(items):
         raise e
 
     for item in items:
-        query = 'item:{0} current_status:{0}'.format(item.id,
+        query = 'item_id:{0} current_status:{0}'.format(item.id,
                 CirculationLoanCycle.STATUS_ON_LOAN)
         clcs = CirculationLoanCycle.search(query)
         overdue_clcs(clcs)

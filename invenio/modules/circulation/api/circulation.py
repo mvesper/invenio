@@ -158,7 +158,8 @@ def loan_items(user, items, start_date, end_date,
         item.save()
         current_status = CirculationLoanCycle.STATUS_ON_LOAN
         clc = CirculationLoanCycle.new(current_status=current_status,
-                                       item=item, user=user,
+                                       item_id=item.id, item=item,
+                                       user_id=user.id, user=user,
                                        start_date=start_date,
                                        end_date=end_date,
                                        desired_start_date=desired_start_date,
@@ -294,7 +295,7 @@ def return_items(items):
         #clc = CirculationLoanCycle.search(item=item,
         #                                  current_status='on_loan')[0]
         on_loan = CirculationLoanCycle.STATUS_ON_LOAN
-        query = 'item:{0} current_status:{1}'.format(item.id, on_loan)
+        query = 'item_id:{0} current_status:{1}'.format(item.id, on_loan)
         clc = CirculationLoanCycle.search(query)[0]
         clc.current_status = CirculationLoanCycle.STATUS_FINISHED
         clc.save()

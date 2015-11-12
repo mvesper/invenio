@@ -190,12 +190,6 @@ class CirculationObject(object):
 
         self.modification_date = datetime.datetime.now()
 
-        # Create dict for elasticsearch
-        es_data = {}
-        for key, value in self.__dict__.items():
-            if key not in ['_data', '_sa_instance_state']:
-                es_data[key] = self._encode(value)
-
         # Create dict for additional vars in _data
         db_data = {}
         if hasattr(self, '_construction_schema'):
@@ -206,6 +200,12 @@ class CirculationObject(object):
         db.session.add(self)
         if not hasattr(self, 'id') or self.id is None:
             db.session.flush()
+
+        # Create dict for elasticsearch
+        es_data = {}
+        for key, value in self.__dict__.items():
+            if key not in ['_data', '_sa_instance_state']:
+                es_data[key] = self._encode(value)
 
         es_data['id'] = self.id
         self._es.index(index=self.__tablename__,

@@ -22,6 +22,9 @@ class TestLoanCycleApi(CirculationTestBase):
 
         self.delete_test_data()
 
+    """
+    This turns out to be possible, since a clc can be canceled du to a lost
+    item for example
     def test_cancel_clc_failure(self):
         import invenio.modules.circulation.api as api
         import invenio.modules.circulation.models as models
@@ -37,6 +40,7 @@ class TestLoanCycleApi(CirculationTestBase):
             api.loan_cycle.cancel_clcs(self.clcs)
 
         self.delete_test_data()
+    """
 
     def test_cancel_clc_successful_update_waitlist(self):
         import invenio.modules.circulation.api as api

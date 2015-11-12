@@ -57,6 +57,7 @@ styles = Bundle(
     "vendors/jquery-ui/themes/redmond/jquery-ui.css",
     "css/other/cal-heatmap.css",
     "css/circulation/user.css",
+    "vendors/typeahead.js-bootstrap3.less/typeahead.css",
     output="circulation.css",
     filters="cleancss",
     weight=51

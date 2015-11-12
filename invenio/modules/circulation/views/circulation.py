@@ -115,7 +115,7 @@ def _check(val):
 
 def _get_global_cal_range(items, end_date):
     def _get_latest_end_date(items):
-        query = 'item:{0}'
+        query = 'item_id:{0}'
         return [x.end_date for item in items
                 for x
                 in models.CirculationLoanCycle.search(query.format(item.id))]

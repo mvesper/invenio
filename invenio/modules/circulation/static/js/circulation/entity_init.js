@@ -22,4 +22,5 @@ require([
     'js/other/jsoneditor.min',
     'js/circulation/entity',
     'notify',
+    'typeahead',
 ], function() {});

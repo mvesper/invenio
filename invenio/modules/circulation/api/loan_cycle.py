@@ -94,7 +94,7 @@ def update_waitlist(clc):
     involved_clcs = filter(check_clcs,
                            CirculationLoanCycle.search(item=clc.item))
     """
-    query = 'item:{0}'.format(clc.item.id)
+    query = 'item_id:{0}'.format(clc.item.id)
     involved_clcs = filter(check_clcs,
                            CirculationLoanCycle.search(query))
     affected_clc = _get_nearest_affected_clc(clc.start_date, clc.end_date,

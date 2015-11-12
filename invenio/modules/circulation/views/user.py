@@ -45,7 +45,7 @@ def _get_current(user_id, status):
                 'cal_data': json.dumps(_get_cal_heatmap_dates([clc.item])),
                 'cal_range': _get_cal_heatmap_range([clc.item])}
 
-    query = 'user:{0} current_status:{1}'.format(user_id, status)
+    query = 'user_id:{0} current_status:{1}'.format(user_id, status)
 
     return [make_dict(clc) for clc
             in models.CirculationLoanCycle.search(query)]
@@ -54,6 +54,7 @@ def _get_current(user_id, status):
 @blueprint.route('/user/<user_id>/record/<record_id>', methods=['GET'])
 @blueprint.route('/user/<user_id>/record/<record_id>/<state>', methods=['GET'])
 def user_record_actions(user_id, record_id, state=None):
+    #import ipdb; ipdb.set_trace()
     try:
         user = models.CirculationUser.get(user_id)
     except Exception:

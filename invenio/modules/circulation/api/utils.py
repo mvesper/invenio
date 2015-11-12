@@ -53,7 +53,7 @@ def _get_affected_loan_cycles(statuses, items):
     def filter_func(x):
         return x.current_status not in statuses
     #clc_list = [CirculationLoanCycle.search(item=item.id) for item in items]
-    clc_list = [CirculationLoanCycle.search('item:{0}'.format(item.id))
+    clc_list = [CirculationLoanCycle.search('item_id:{0}'.format(item.id))
                 for item in items]
     clc_list = [item for sub_list in clc_list for item in sub_list]
     return filter(filter_func, clc_list)
