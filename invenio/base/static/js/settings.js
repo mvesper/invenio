@@ -58,6 +58,7 @@ require.config({
     "notify": "circulation/static/js/other/notify",
     "d3": "circulation/static/js/other/d3",
     "cal-heatmap": "circulation/static/js/other/cal-heatmap",
+    "jquery-tabbable": "circulation/static/js/other/jquery.tabbable",
   },
   shim: {
     jquery: {
@@ -172,6 +173,10 @@ require.config({
     "cal-heatmap": {
       deps: ["jquery", "d3"],
       exports: "cal-heatmap"
+    },
+    "jquery-tabbable": {
+      deps: ["jquery"],
+      exports: "jquery-tabbable"
     },
 
   }

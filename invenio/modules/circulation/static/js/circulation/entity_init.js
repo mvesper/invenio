@@ -20,7 +20,7 @@
 require([
     'jquery',
     'js/other/jsoneditor.min',
-    'js/other/jquery.tabbable',
+    'jquery-tabbable',
     'js/circulation/entity',
     'notify',
     'typeahead',

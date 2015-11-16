@@ -21,7 +21,7 @@ define(
     [
         'jquery',
         'typeahead',
-        'js/other/jquery.tabbable',
+        'jquery-tabbable',
     ],
 function($, _, __) {
 
