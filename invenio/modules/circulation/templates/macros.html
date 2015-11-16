@@ -204,8 +204,8 @@
     </div>
 {% endmacro %}
 
-{%- macro editor(editor_data, editor_schema) -%}
-    <div id="entity_detail" data-editor_data='{{editor_data}}' data-editor_schema="{{editor_schema}}"></div>
+{%- macro editor(editor_data, editor_schema, suggestions_config='null') -%}
+    <div id="entity_detail" data-editor_data='{{editor_data}}' data-editor_schema="{{editor_schema}}" data-suggestions_config="{{suggestions_config}}"></div>
 {% endmacro %}
 
 {%- macro warnings(warnings) -%}

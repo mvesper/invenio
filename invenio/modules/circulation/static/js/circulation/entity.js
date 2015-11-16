@@ -20,8 +20,10 @@
 define(
     [
         'jquery',
+        'typeahead',
+        'js/other/jquery.tabbable',
     ],
-function($) {
+function($, _, __) {
 
     function get_entity_id(){
         var url_parts = document.URL.split('/');
@@ -108,6 +110,97 @@ function($) {
         });
     });
 
+    function setup_suggestions(config) {
+        $.each($('.form-control'), function(i, elem){
+            var field_name = null;
+            var entity = null;
+            var attributes = null;
+            var url = null;
+            var found = false;
+            for (var i = 0; i < config.length; i++) {
+                field_name = config[i][0];
+                entity = config[i][1];
+                attributes = config[i][2];
+                url = config[i][3];
+
+                if (elem.name.indexOf(field_name) != -1){
+                    found = true;
+                    break;
+                }
+            }
+            if (found == false) {
+                return
+            }
+
+
+            var last_keystroke = null;
+
+            function get_attribute(obj, key) {
+                var keys = key.split('.');
+
+                for (var i = 0; i < keys.length; i++) {
+                  obj = obj[keys[i]];
+                }
+
+                return obj;
+            }
+
+            function search_entities(query, publish) {
+                function success(data) {
+                    data = JSON.parse(data);
+                    var matches = [];
+                    $.each(data, function(i, obj) {
+                        var vars = [];
+                        $.each(attributes, function(i, key) {
+                            vars.push(get_attribute(obj, key));
+                        });
+
+                        var val = vars.join(' - ');
+
+                        matches.push({value: val});
+                    });
+
+                  publish(matches);
+                }
+
+                var search_body = {'entity': entity, 'search': query};
+                var ajax_query = {
+                    type: "POST",
+                    url: url,
+                    data: JSON.stringify(JSON.stringify(search_body)),
+                    success: success,
+                    contentType: 'application/json',
+                }
+
+                function run(){
+                  var now = new Date();
+                  if (now - last_keystroke > 800) {
+                    $.ajax(ajax_query);
+                  }
+                }
+
+                last_keystroke = new Date();
+                setTimeout(run, 1000);
+            }
+
+            $(elem).typeahead({minLength: 1},
+                {name: field_name, source: search_entities}
+            ).on('typeahead:selected', function (event, data) {
+                var val = data.value.split(' ')[0];
+                $(event.target).typeahead('val', val);
+                // TODO
+                // No idea why all 3 are necessary ~.~
+                // Otherwise the value is not updated
+                json_editor.getEditor('root.'+field_name).value = val;
+                json_editor.getEditor('root.'+field_name).setValue(val);
+                json_editor.getValue()[field_name] = val;
+
+                $.tabNext();
+            });
+
+        });
+    }
+
     $('#entity_detail').ready(function() {
         if ($('#entity_detail').length == 0) {
             return;
@@ -115,6 +208,7 @@ function($) {
         var editor = $('#entity_detail');
         var data = JSON.parse(editor.attr('data-editor_data'));
         var schema = JSON.parse(editor.attr('data-editor_schema'));
+        var config = JSON.parse(editor.attr('data-suggestions_config'));
 
         json_editor = new JSONEditor($('#entity_detail')[0], 
                 {
@@ -124,6 +218,9 @@ function($) {
                 });
         if (Object.keys(data).length != 0){
             json_editor.setValue(data);
+        }
+        if (config != null){
+            setup_suggestions(config);
         }
     });
 

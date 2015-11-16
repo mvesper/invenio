@@ -105,11 +105,17 @@ def entity(entity, id):
     editor_schema = json.dumps(aggregator._json_schema,
                                default=datetime_serial)
 
+    try:
+        suggestions_config = json.dumps(aggregators[entity]._suggestions_config)
+    except AttributeError:
+        suggestions_config = json.dumps(None)
+
     return render_template('entities/'+entity+'_detail.html',
                            active_nav='entities',
                            editor_data=editor_data,
                            editor_schema=editor_schema,
-                           aggregated=aggregated)
+                           aggregated=aggregated,
+                           suggestions_config=suggestions_config)
 
 
 def _try_actions(entity, functions, obj):
@@ -131,8 +137,8 @@ def _try_actions(entity, functions, obj):
 
 @blueprint.route('/entities/action/create/<entity>')
 def entity_new(entity):
-    # entering the id is going to break and doesn't make sense, so it will be
-    # removed here
+    # entering the certain values is going to break and doesn't make sense,
+    # so they will be removed here
     editor_schema = aggregators[entity]._json_schema
 
     for key in ['id', 'group_uuid', 'creation_date']:
@@ -141,11 +147,17 @@ def entity_new(entity):
         except KeyError:
             pass
 
+    try:
+        suggestions_config = json.dumps(aggregators[entity]._suggestions_config)
+    except AttributeError:
+        suggestions_config = json.dumps(None)
+
     editor_schema = json.dumps(editor_schema, default=datetime_serial)
     return render_template('entities/entity_create.html',
                            active_nav='entities', obj={}, entity=entity,
                            editor_data={},
-                           editor_schema=editor_schema)
+                           editor_schema=editor_schema,
+                           suggestions_config=suggestions_config)
 
 
 def extract_params(func):

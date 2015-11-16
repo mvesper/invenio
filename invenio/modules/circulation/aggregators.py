@@ -97,6 +97,11 @@ class CirculationItemAggregator(BaseAggregator):
                         }
                     }
 
+    _suggestions_config = [
+            ('location_id', 'location',
+             ['id', 'code', 'name'], '/circulation/api/entity/search'),
+            ]
+
     @classmethod
     def get_aggregated_info(cls, obj):
         return {
@@ -130,6 +135,13 @@ class CirculationLoanCycleAggregator(BaseAggregator):
                         'requested_extension_end_date': {'type': 'string'},
                         }
                     }
+
+    _suggestions_config = [
+            ('item_id', 'item',
+             ['id', 'record.title'], '/circulation/api/entity/search'),
+            ('user_id', 'user',
+             ['id', 'name'], '/circulation/api/entity/search')
+            ]
 
     @classmethod
     def get_aggregated_info(cls, obj):
@@ -220,6 +232,21 @@ class CirculationEventAggregator(BaseAggregator):
                         'creation_date': {'type': 'string'},
                         }
                     }
+
+    _suggestions_config = [
+            ('item_id', 'item',
+             ['id', 'record.title'], '/circulation/api/entity/search'),
+            ('user_id', 'user',
+             ['id', 'name'], '/circulation/api/entity/search'),
+            ('loan_cycle_id', 'loan_cycle',
+             ['id'], '/circulation/api/entity/search'),
+            ('loan_rule_id', 'loan_rule',
+             ['id'], '/circulation/api/entity/search'),
+            ('location_id', 'location',
+             ['id', 'code', 'name'], '/circulation/api/entity/search'),
+            ('mail_template_id', 'mail_template',
+             ['id', 'template_name'], '/circulation/api/entity/search'),
+            ]
 
 
 class CirculationMailTemplateAggregator(BaseAggregator):
