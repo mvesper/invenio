@@ -57,6 +57,8 @@ loan_cycle_mappings = {'mappings': {
                                     'group_uuid': {
                                         'type': 'string',
                                         'index': 'not_analyzed'},
+                                    'end_date': {
+                                        'type': 'date',},
                                     'global_fulltext': {
                                         'type': 'string',},
                                     }

@@ -22,5 +22,4 @@ require([
     'js/other/jsoneditor.min',
     'js/circulation/user',
     'cal-heatmap',
-    'notify',
 ], function() {});

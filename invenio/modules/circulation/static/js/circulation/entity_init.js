@@ -22,6 +22,5 @@ require([
     'js/other/jsoneditor.min',
     'jquery-tabbable',
     'js/circulation/entity',
-    'notify',
     'typeahead',
 ], function() {});

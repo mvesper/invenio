@@ -37,6 +37,10 @@ def generate():
                '{% endfor %}')
     mt1 = api.mail_template.create('item_loan', 'Loan confirmation', header,
                                    content)
+    mt2 = api.mail_template.create('overdue_letter_1', 'Overdue Letter 1',
+                                   header, content)
+    mt3 = api.mail_template.create('overdue_letter_2', 'Overdue Letter 2',
+                                   header, content)
 
     lr1 = api.loan_rule.create(models.CirculationItem.GROUP_BOOK,
                                models.CirculationUser.GROUP_DEFAULT,

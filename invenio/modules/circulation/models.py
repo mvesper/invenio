@@ -514,6 +514,7 @@ class CirculationEvent(CirculationObject, db.Model):
     EVENT_CLC_CANCELED = 'clc_canceled'
     EVENT_CLC_UPDATED = 'clc_updated'
     EVENT_CLC_OVERDUE = 'clc_overdue'
+    EVENT_CLC_OVERDUE_LETTER = 'clc_overdue_letter'
     EVENT_CLC_REQUEST_LOAN_EXTENSION = 'clc_request_loan_extension'
     EVENT_CLC_LOAN_EXTENSION = 'clc_loan_extension'
     EVENT_LOCATION_CREATE = 'location_created'

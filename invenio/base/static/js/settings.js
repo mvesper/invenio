@@ -55,7 +55,6 @@ require.config({
     "select2": "vendor/select2/select2.min",
     "ckeditor-core": "vendors/ckeditor/ckeditor",
     "ckeditor-jquery": "vendors/ckeditor/adapters/jquery",
-    "notify": "circulation/static/js/other/notify",
     "d3": "circulation/static/js/other/d3",
     "cal-heatmap": "circulation/static/js/other/cal-heatmap",
     "jquery-tabbable": "circulation/static/js/other/jquery.tabbable",
@@ -162,10 +161,6 @@ require.config({
     },
     "ckeditor-jquery": {
       deps: ["jquery", "ckeditor-core"]
-    },
-    "notify": {
-      deps: ["jquery"],
-      exports: "$.fn.notify"
     },
     "d3": {
       exports: "d3"
