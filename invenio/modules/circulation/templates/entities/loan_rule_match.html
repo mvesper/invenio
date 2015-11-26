@@ -26,7 +26,7 @@
         <div class="panel-heading">
             <div class="row">
                 <div class="col-md-10">
-                    <a href="/circulation/entities/loan_rule/{{entity.id}}">{{entity.id}}</a>
+                    <a href="/circulation/entities/loan_rule_match/{{entity.id}}">{{entity.id}}</a>
                 </div>
                 <div class="col-md-2">
                     <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_{{entity.id}}">Delete</button>
@@ -35,16 +35,16 @@
         </div>
         <div class="panel-body">
             <div class="row">
-                <div class="col-md-2">Name</div>
-                <div class="col-md-10">{{entity.name}}</div>
+                <div class="col-md-2">Item Type</div>
+                <div class="col-md-10">{{entity.item_type}}</div>
             </div>
             <div class="row">
-                <div class="col-md-2">Type</div>
-                <div class="col-md-10">{{entity.type}}</div>
+                <div class="col-md-2">Patron Type</div>
+                <div class="col-md-10">{{entity.patron_type}}</div>
             </div>
             <div class="row">
-                <div class="col-md-2">Loan Period</div>
-                <div class="col-md-10">{{entity.loan_period}}</div>
+                <div class="col-md-2">Location Code</div>
+                <div class="col-md-10">{{entity.location_code}}</div>
             </div>
         </div>
     </div>

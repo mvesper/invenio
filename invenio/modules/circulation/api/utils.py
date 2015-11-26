@@ -1,13 +1,15 @@
 import datetime
+import functools
 
 from jinja2 import Template
 from itertools import starmap
+from difflib import SequenceMatcher
 
 from invenio.ext.email import send_email
 from invenio.modules.circulation.models import (CirculationLoanCycle,
                                                 CirculationMailTemplate,
-                                                CirculationLoanRule)
-
+                                                CirculationLoanRule,
+                                                CirculationLoanRuleMatch)
 
 def check_field_in(field_name, values, message):
     def wrapper(objs):
@@ -154,47 +156,52 @@ def email_notification(template_name, sender, receiver, **kwargs):
                content=content)
 
 
+def compare_query(library_code, item_type, user_group, rule):
+    def _compare(val, rule_val):
+        if '*' in rule_val:
+            tmp = rule_val.replace('*', '')
+            if val.startswith(tmp):
+                res = SequenceMatcher(None, val, tmp).ratio()
+                return res if res > 0 else 0.1 # This addresses '*'
+        else:
+            if rule_val == val:
+                return 1
+        return 0
+
+    library_val = _compare(library_code, rule.location_code)
+    item_val = _compare(item_type, rule.item_type)
+    user_val = _compare(user_group, rule.patron_type)
+
+    return (item_val, user_val, library_val, rule.loan_rule_id)
+
+
 def get_loan_rule(user, item):
-    def permutate_positions(iterable, replacement, positions_count):
-	import itertools
-	index_range = range(len(iterable))
-	res = []
-	for p_count in range(positions_count+1):
-		positions = itertools.permutations(index_range, p_count)
-		positions = set(tuple(sorted(x)) for x in positions)
-		for position in positions:
-			tmp = iterable[:]
-			for index in position:
-				tmp[index] = replacement
-			res.append(tmp)
-	return res
-    
-    query_parts = [user.user_group, item.item_group, item.location.code]
+    user_group = user.user_group
+    item_type = item.item_group
+    library_code = item.location.code
+
+    # Direct query
     query = 'user_group:{0} item_group:{1} location_code:{2}'
-    for  permutation in permutate_positions(query_parts, '*', 3):
-        _query = query.format(*permutation)
-        clr = CirculationLoanRule.search(query)
-        if clr:
-           break
-    # TODO
+    query = query.format(user_group, item_type, library_code)
+
+    rules = CirculationLoanRuleMatch.search(query)
+
+    if not rules:
+        comp = functools.partial(compare_query,
+                                 library_code, item_type, user_group)
+        rules = sorted([comp(x) for x in CirculationLoanRuleMatch.get_all()],
+                       key=lambda x: (1-x[0], 1-x[1], 1-x[2]))
+        rules = filter(lambda x: x[0] != 0 and x[1] != 0 and x[2] != 0, rules)
+
+    rule = rules[0]
+
+    return CirculationLoanRule.get(rule[3])
 
 
 def get_loan_period(user, items):
     try:
-        res = []
-        for item in items:
-            """
-            clr = CirculationLoanRule.search(user_group=user.user_group,
-                                             item_group=item.item_group,
-                                             location_code=item.location.code)
-            """
-            query = 'user_group:{0} item_group:{1} location_code:{2}'
-            query = query.format(user.user_group, item.item_group,
-                                 item.location.code)
-            clr = CirculationLoanRule.search(query)[0]
-            res.append(clr.loan_period)
-        return max(res)
-    except IndexError:
+        return max(get_loan_rule(user, item).loan_period for item in items)
+    except ValueError:
         return 0
 
 

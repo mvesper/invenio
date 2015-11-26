@@ -226,6 +226,7 @@ class CirculationEventAggregator(BaseAggregator):
                         'loan_cycle_id': {'type': 'integer'},
                         'location_id': {'type': 'integer'},
                         'loan_rule_id': {'type': 'integer'},
+                        'loan_rule_match_id': {'type': 'integer'},
                         'mail_template_id': {'type': 'integer'},
                         'event': {'type': 'string'},
                         'description': {'type': 'string'},
@@ -241,6 +242,8 @@ class CirculationEventAggregator(BaseAggregator):
             ('loan_cycle_id', 'loan_cycle',
              ['id'], '/circulation/api/entity/search'),
             ('loan_rule_id', 'loan_rule',
+             ['id'], '/circulation/api/entity/search'),
+            ('loan_rule_match_id', 'loan_rule_match',
              ['id'], '/circulation/api/entity/search'),
             ('location_id', 'location',
              ['id', 'code', 'name'], '/circulation/api/entity/search'),
@@ -269,10 +272,25 @@ class CirculationLoanRuleAggregator(BaseAggregator):
                     'title': 'Loan Rule',
                     'properties': {
                         'id': {'type': 'integer'},
-                        'item_group': {'type': 'string'},
-                        'user_group': {'type': 'string'},
-                        'extension_allowed': {'type': 'boolean'},
-                        'location_code': {'type': 'string'},
+                        'name': {'type': 'string'},
+                        'type': {'type': 'string'},
                         'loan_period': {'type': 'integer'},
+                        'holdable': {'type': 'boolean'},
+                        'home_pickup': {'type': 'boolean'},
+                        'automatic_recall': {'type': 'boolean'},
+                        }
+                    }
+
+
+class CirculationLoanRuleMatchAggregator(BaseAggregator):
+    _json_schema = {'type': 'object',
+                    'title': 'Loan Rule',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'loan_rule_id': {'type': 'integer'},
+                        'item_type': {'type': 'string'},
+                        'patron_type': {'type': 'string'},
+                        'location_code': {'type': 'string'},
+                        'active': {'type': 'boolean'},
                         }
                     }

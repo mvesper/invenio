@@ -182,17 +182,26 @@ loan_rule_mappings = {'mappings': {
                                 'id': {
                                     'type': 'integer',
                                     'index': 'not_analyzed'},
-                                'user_group': {
+                                'name': {
                                     'type': 'string',
                                     'index': 'not_analyzed'},
-                                'item_group': {
-                                    'type': 'string',
-                                    'index': 'not_analyzed'},
-                                'location_code': {
+                                'type': {
                                     'type': 'string',
                                     'index': 'not_analyzed'},
                                 'loan_period': {
                                     'type': 'integer',
+                                    'index': 'not_analyzed'},
+                                'holdable': {
+                                    'type': 'boolean',
+                                    'index': 'not_analyzed'},
+                                'home_pickup': {
+                                    'type': 'boolean',
+                                    'index': 'not_analyzed'},
+                                'renewable': {
+                                    'type': 'boolean',
+                                    'index': 'not_analyzed'},
+                                'automatic_recall': {
+                                    'type': 'boolean',
                                     'index': 'not_analyzed'},
                                 },
                             }
@@ -200,10 +209,38 @@ loan_rule_mappings = {'mappings': {
                       }
 add_copy_to(loan_rule_mappings)
 
+loan_rule_match_mappings = {
+        'mappings': {
+            'circulation_loan_rule_match': {
+                '_all': {'enabled': True},
+                'properties': {
+                    'id': {
+                        'type': 'integer',
+                        'index': 'not_analyzed'},
+                    'loan_rule_id': {
+                        'type': 'integer',
+                        'index': 'not_analyzed'},
+                    'item_type': {
+                        'type': 'string',
+                        'index': 'not_analyzed'},
+                    'patron_type': {
+                        'type': 'string',
+                        'index': 'not_analyzed'},
+                    'location_code': {
+                        'type': 'string',
+                        'index': 'not_analyzed'},
+                    },
+                }
+            }
+        }
+
+add_copy_to(loan_rule_match_mappings)
+
 mappings = {'Item': item_mappings,
             'Loan Cycle': loan_cycle_mappings,
             'User': user_mappings,
             'Location': location_mappings,
             'Event': event_mappings,
             'Mail Template': mail_template_mappings,
-            'Loan Rule': loan_rule_mappings}
+            'Loan Rule': loan_rule_mappings,
+            'Loan Rule Match': loan_rule_match_mappings}

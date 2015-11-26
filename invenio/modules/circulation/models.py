@@ -456,11 +456,29 @@ class CirculationMailTemplate(CirculationObject, db.Model):
 class CirculationLoanRule(CirculationObject, db.Model):
     __tablename__ = 'circulation_loan_rule'
     id = db.Column(db.BigInteger, primary_key=True, nullable=False)
-    item_group = db.Column(db.String(255))
-    user_group = db.Column(db.String(255))
-    location_code = db.Column(db.String(255))
-    extension_allowed = db.Column(db.Boolean)
+    name = db.Column(db.String(255))
+    type = db.Column(db.String(255))
     loan_period = db.Column(db.Integer)
+    holdable = db.Column(db.Boolean)
+    home_pickup= db.Column(db.Boolean)
+    renewable = db.Column(db.Boolean)
+    automatic_recall = db.Column(db.Boolean)
+    creation_date = db.Column(db.DateTime)
+    modification_date = db.Column(db.DateTime)
+    _data = db.Column(db.LargeBinary)
+
+
+class CirculationLoanRuleMatch(CirculationObject, db.Model):
+    __tablename__ = 'circulation_loan_rule_match'
+    id = db.Column(db.BigInteger, primary_key=True, nullable=False)
+    loan_rule_id = db.Column(db.BigInteger,
+                             db.ForeignKey('circulation_loan_rule.id',
+                                           ondelete="SET NULL"))
+    loan_rule = db.relationship('CirculationLoanRule')
+    item_type = db.Column(db.String(255))
+    patron_type = db.Column(db.String(255))
+    location_code = db.Column(db.String(255))
+    active = db.Column(db.Boolean)
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     _data = db.Column(db.LargeBinary)
@@ -491,6 +509,10 @@ class CirculationEvent(CirculationObject, db.Model):
                              db.ForeignKey('circulation_loan_rule.id',
                                            ondelete="SET NULL"))
     loan_rule = db.relationship('CirculationLoanRule')
+    loan_rule_match_id = db.Column(db.BigInteger,
+            db.ForeignKey('circulation_loan_rule_match.id',
+            ondelete="SET NULL"))
+    loan_rule_match = db.relationship('CirculationLoanRuleMatch')
     event = db.Column(db.String(255))
     description = db.Column(db.String(255))
     creation_date = db.Column(db.DateTime)
@@ -526,6 +548,9 @@ class CirculationEvent(CirculationObject, db.Model):
     EVENT_LR_CREATE = 'loan_rule_created'
     EVENT_LR_CHANGE = 'loan_rule_changed'
     EVENT_LR_DELETE = 'loan_rule_deleted'
+    EVENT_LRM_CREATE = 'loan_rule_match_created'
+    EVENT_LRM_CHANGE = 'loan_rule_match_changed'
+    EVENT_LRM_DELETE = 'loan_rule_match_deleted'
 
 
 jsonpickle.handlers.registry.register(CirculationRecord,

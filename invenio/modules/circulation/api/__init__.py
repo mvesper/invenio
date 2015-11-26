@@ -5,4 +5,5 @@ import invenio.modules.circulation.api.loan_cycle
 import invenio.modules.circulation.api.location
 import invenio.modules.circulation.api.mail_template
 import invenio.modules.circulation.api.loan_rule
+import invenio.modules.circulation.api.loan_rule_match
 import invenio.modules.circulation.api.event

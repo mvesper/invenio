@@ -54,7 +54,11 @@ models_entities = {'record': {'name': 'Record',
                                      '_pos': 6},
                    'loan_rule': {'name': 'Loan Rule',
                                  'class': models.CirculationLoanRule,
-                                 '_pos': 7}}
+                                 '_pos': 7},
+                   'loan_rule_match': {
+                       'name': 'Loan Rule Match',
+                       'class': models.CirculationLoanRuleMatch,
+                       '_pos': 8}}
 
 aggregators = {'record': aggregators.CirculationRecordAggregator,
                'user': aggregators.CirculationUserAggregator,
@@ -63,7 +67,9 @@ aggregators = {'record': aggregators.CirculationRecordAggregator,
                'location': aggregators.CirculationLocationAggregator,
                'event': aggregators.CirculationEventAggregator,
                'mail_template': aggregators.CirculationMailTemplateAggregator,
-               'loan_rule': aggregators.CirculationLoanRuleAggregator}
+               'loan_rule': aggregators.CirculationLoanRuleAggregator,
+               'loan_rule_match':
+                   aggregators.CirculationLoanRuleMatchAggregator}
 
 
 @blueprint.route('/entities')

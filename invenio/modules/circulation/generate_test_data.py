@@ -42,9 +42,8 @@ def generate():
     mt3 = api.mail_template.create('overdue_letter_2', 'Overdue Letter 2',
                                    header, content)
 
-    lr1 = api.loan_rule.create(models.CirculationItem.GROUP_BOOK,
-                               models.CirculationUser.GROUP_DEFAULT,
-                               'ccl', 28, True)
+    lr1 = api.loan_rule.create('default', 'period', 28, True, True, True, True)
+    lrm1 = api.loan_rule_match.create(lr1.id, '*', '*', '*', True)
 
     # latest loaned item
     start_date = datetime.date.today()
