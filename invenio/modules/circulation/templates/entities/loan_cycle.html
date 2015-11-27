@@ -22,44 +22,33 @@
 {%- extends 'entities/entity_hub.html' -%}
 
 {%- block entity_search_result -%}
-{% for entity in entities %}
-    <div class="panel panel-default" id="loan_cycle_{{entity.id}}">
-        <div class="panel-heading">
-            <div class="row">
-                <div class="col-md-10">
-                    <a href="/circulation/entities/loan_cycle/{{entity.id}}">{{entity.id}}</a>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_{{entity.id}}">Delete</button>
-                </div>
-            </div>
-        </div>
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-2">Current Status</div>
-                <div class="col-md-10">{{entity.current_status}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Item</div>
-                <div class="col-md-10">{{entity.item.id}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">User</div>
-                <div class="col-md-10">{{entity.user.id}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Start Date</div>
-                <div class="col-md-10">{{entity.start_date}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">End Date</div>
-                <div class="col-md-10">{{entity.end_date}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Issued Date</div>
-                <div class="col-md-10">{{entity.issued_date}}</div>
-            </div>
-        </div>
-    </div>
-{% endfor %}
+<table class="table table-hover">
+    <tr>
+        <th>ID</th>
+        <th>Current Status</th>
+        <th>Item ID</th>
+        <th>User ID</th>
+        <th>Start Date</th>
+        <th>Desired Start Date</th>
+        <th>End Date</th>
+        <th>Desired End Date</th>
+        <th>Issued Date</th>
+        <th>Action</th>
+    </tr>
+    {% for entity in entities %}
+        {% set delete_button = '<button type="button" class="btn btn-danger btn-block entity_delete" id="delete_' + entity.id|string + '">Delete</button>' %}
+        <tr onclick="document.location = '/circulation/entities/loan_cycle/{{entity.id}}'">
+            <td><a href="/circulation/entities/loan_cycle/{{entity.id}}">{{entity.id}}</a></td>
+            <td>{{entity.current_status}}</td>
+            <td>{{entity.item.id}}</td>
+            <td>{{entity.user.id}}</td>
+            <td>{{entity.start_date}}</td>
+            <td>{{entity.desired_start_date}}</td>
+            <td>{{entity.end_date}}</td>
+            <td>{{entity.desired_end_date}}</td>
+            <td>{{entity.issued_date}}</td>
+            <td>{{delete_button | safe}}</td>
+        </tr>
+    {% endfor %}
+</table>
 {%- endblock -%}

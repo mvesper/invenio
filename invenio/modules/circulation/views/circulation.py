@@ -63,12 +63,19 @@ def circulation_search(search_string):
      waitlist, delivery, search) = _get_circulation_state(search_string)
 
     if search:
-        item_ids += [str(x.id) for x in
-                     models.CirculationItem.search(search)]
         user_ids += [str(x.id) for x in
                      models.CirculationUser.search(search)]
-        record_ids += [str(x.id) for x
-                       in models.CirculationRecord.search(search)]
+        item_tmp = [str(x.id) for x in
+                    models.CirculationItem.search(search)]
+        record_tmp = [str(x.id) for x
+                      in models.CirculationRecord.search(search)]
+
+        # If the search returns results for items and records, the records
+        # are prefered
+        item_tmp = [] if item_tmp and record_tmp else item_tmp
+
+        item_ids += item_tmp
+        record_ids += record_tmp
 
         new_url = _build_circulation_state(item_ids, user_ids, record_ids,
                                            start_date, end_date,

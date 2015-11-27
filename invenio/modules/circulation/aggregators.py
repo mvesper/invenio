@@ -194,7 +194,7 @@ class CirculationUserAggregator(BaseAggregator):
     def _get_current_items(cls, obj):
         query = 'user_id:{0}'.format(obj.id)
         return [x.item for x in CirculationLoanCycle.search(query)
-                if x.current_status == 'active']
+                if x.current_status == 'on_loan']
 
     @classmethod
     def _get_loan_cycles(cls, obj):
@@ -250,6 +250,40 @@ class CirculationEventAggregator(BaseAggregator):
             ('mail_template_id', 'mail_template',
              ['id', 'template_name'], '/circulation/api/entity/search'),
             ]
+
+    @classmethod
+    def get_aggregated_info(cls, obj):
+        return {
+                'schema': cls._json_schema,
+                'functions': {},
+                'additions': {
+                        'user': cls._get('user', obj),
+                        'item': cls._get('item', obj),
+                        'loan_cycle': cls._get('loan_cycle', obj),
+                        'location': cls._get('location', obj),
+                        'mail_template': cls._get('mail_template', obj),
+                        'loan_rule': cls._get('loan_rule', obj),
+                        'loan_rule_match': cls._get('loan_rule_match', obj),
+                    }
+                }
+
+    @classmethod
+    def _get(cls, entity, obj):
+        import invenio.modules.circulation.models as models
+        models = {'record': models.CirculationRecord,
+                  'user': models.CirculationUser,
+                  'item': models.CirculationItem,
+                  'loan_cycle': models.CirculationLoanCycle,
+                  'location': models.CirculationLocation,
+                  'event': models.CirculationEvent,
+                  'mail_template': models.CirculationMailTemplate,
+                  'loan_rule': models.CirculationLoanRule,
+                  'loan_rule_match': models.CirculationLoanRuleMatch}
+
+        try:
+            return models[entity].get(obj.__getattribute__(entity + '_id'))
+        except TypeError:
+            return None
 
 
 class CirculationMailTemplateAggregator(BaseAggregator):

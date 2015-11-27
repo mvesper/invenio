@@ -19,11 +19,31 @@
 #}
 
 {%- extends 'entities/entity_hub.html' -%}
-{% from 'macros_entities.html' import item %}
 
 {%- block entity_search_result -%}
-{% for entity in entities %}
-    {% set delete_button = '<button type="button" class="btn btn-danger btn-block entity_delete" id="delete_' + entity.id|string + '">Delete</button>' %}
-    {{ item(id=entity.id, isbn=entity.isbn, barcode=entity.barcode, record=entity.record, top_action=delete_button) }}
-{% endfor %}
+<table class="table table-hover">
+    <tr>
+        <th>ID</th>
+        <th>Barcode</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Location</th>
+        <th>Shelf Number</th>
+        <th>Record ID</th>
+        <th>Action</th>
+    </tr>
+    {% for entity in entities %}
+        {% set delete_button = '<button type="button" class="btn btn-danger btn-block entity_delete" id="delete_' + entity.id|string + '">Delete</button>' %}
+        <tr onclick="document.location = '/circulation/entities/item/{{entity.id}}'">
+            <td><a href="/circulation/entities/item/{{entity.id}}">{{entity.id}}</a></td>
+            <td>{{entity.barcode}}</td>
+            <td>{{entity.record.title}}</td>
+            <td>{{entity.current_status}}</td>
+            <td>{{entity.location.name}}</td>
+            <td>{{entity.shelf_number}}</td>
+            <td>{{entity.record.id}}</td>
+            <td>{{delete_button | safe}}</td>
+        </tr>
+    {% endfor %}
+</table>
 {%- endblock -%}

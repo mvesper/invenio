@@ -22,36 +22,20 @@
 {%- extends 'entities/entity_hub.html' -%}
 
 {%- block entity_search_result -%}
-{% for entity in entities %}
-    <div class="panel panel-default" id="mail_template_{{entity.id}}">
-        <div class="panel-heading">
-            <div class="row">
-                <div class="col-md-10">
-                    <a href="/circulation/entities/mail_template/{{entity.id}}">{{entity.id}}</a>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_{{entity.id}}">Delete</button>
-                </div>
-            </div>
-        </div>
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-2">Template Name</div>
-                <div class="col-md-10">{{entity.template_name}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Subject</div>
-                <div class="col-md-10">{{entity.subject}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Header</div>
-                <div class="col-md-10">{{entity.header}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Content</div>
-                <div class="col-md-10">{{entity.content}}</div>
-            </div>
-        </div>
-    </div>
-{% endfor %}
+<table class="table table-hover">
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Subject</th>
+    </tr>
+    {% for entity in entities %}
+        {% set delete_button = '<button type="button" class="btn btn-danger btn-block entity_delete" id="delete_' + entity.id|string + '">Delete</button>' %}
+        <tr onclick="document.location = '/circulation/entities/mail_template/{{entity.id}}'">
+            <td><a href="/circulation/entities/mail_template/{{entity.id}}">{{entity.id}}</a></td>
+            <td>{{entity.template_name}}</td>
+            <td>{{entity.subject}}</td>
+            <td>{{delete_button | safe}}</td>
+        </tr>
+    {% endfor %}
+</table>
 {%- endblock -%}

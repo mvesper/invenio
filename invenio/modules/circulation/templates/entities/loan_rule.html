@@ -21,32 +21,31 @@
 {%- extends 'entities/entity_hub.html' -%}
 
 {%- block entity_search_result -%}
-{% for entity in entities %}
-    <div class="panel panel-default" id="loan_rule_{{entity.id}}">
-        <div class="panel-heading">
-            <div class="row">
-                <div class="col-md-10">
-                    <a href="/circulation/entities/loan_rule/{{entity.id}}">{{entity.id}}</a>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_{{entity.id}}">Delete</button>
-                </div>
-            </div>
-        </div>
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-2">Name</div>
-                <div class="col-md-10">{{entity.name}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Type</div>
-                <div class="col-md-10">{{entity.type}}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-2">Loan Period</div>
-                <div class="col-md-10">{{entity.loan_period}}</div>
-            </div>
-        </div>
-    </div>
-{% endfor %}
+<table class="table table-hover">
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Period</th>
+        <th>Holdable</th>
+        <th>Home Pickup</th>
+        <th>Renewable</th>
+        <th>Automatic Recall</th>
+        <th>Action</th>
+    </tr>
+    {% for entity in entities %}
+        {% set delete_button = '<button type="button" class="btn btn-danger btn-block entity_delete" id="delete_' + entity.id|string + '">Delete</button>' %}
+        <tr onclick="document.location = '/circulation/entities/loan_rule/{{entity.id}}'">
+            <td><a href="/circulation/entities/loan_rule/{{entity.id}}">{{entity.id}}</a></td>
+            <td>{{entity.name}}</td>
+            <td>{{entity.type}}</td>
+            <td>{{entity.loan_period}}</td>
+            <td>{{entity.holdable}}</td>
+            <td>{{entity.home_pickup}}</td>
+            <td>{{entity.renewable}}</td>
+            <td>{{entity.automatic_recall}}</td>
+            <td>{{delete_button | safe}}</td>
+        </tr>
+    {% endfor %}
+</table>
 {%- endblock -%}

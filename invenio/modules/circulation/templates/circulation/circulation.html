@@ -42,73 +42,61 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">User</div>
                         <div class="panel-body" id="circulation_user">
-                            {% for user in users %}
-                            <div class="panel panel-default" id="user_{{user.id}}">
-                                <div class="panel-heading">
-                                    <div class="row">
-                                        <div class="col-md-10">
-                                            <a href="/circulation/entities/user/{{user.id}}">{{user.id}}</a>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_user_{{user.id}}">Remove</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="panel-body">
-                                    <div class="row">
-                                        <div class="col-md-2">CCID</div>
-                                        <div class="col-md-10">{{user.ccid}}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-2">Name</div>
-                                        <div class="col-md-10">{{user.name}}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-2">Address</div>
-                                        <div class="col-md-10">{{user.address}}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-2">Mailbox</div>
-                                        <div class="col-md-10">{{user.mailbox}}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-2">Email</div>
-                                        <div class="col-md-10">{{user.email}}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-2">Phone</div>
-                                        <div class="col-md-10">{{user.phone}}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
+                            {% if users %}
+                                <table class="table table-hover">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>CCID</th>
+                                    <th>Email</th>
+                                    <th>User Group</th>
+                                    <th class="col-md-1">Action</th>
+                                </tr>
+                                {% for entity in users %}
+                                    <tr onclick="document.location = '/circulation/entities/user/{{entity.id}}'">
+                                        <td><a href="/circulation/entities/user/{{entity.id}}">{{entity.id}}</a></td>
+                                        <td>{{entity.name}}</td>
+                                        <td>{{entity.ccid}}</td>
+                                        <td>{{entity.email}}</td>
+                                        <td>{{entity.user_group}}</td>
+                                        <td class="col-md-1"><button type="button" class="btn btn-danger btn-block entity_delete" id="delete_user_{{entity.id}}">Remove</button></td>
+                                    </tr>
+                                {% endfor %}
+                                </table>
+                            {% endif %}
                         </div>
                     </div>
 
                     <div id="circulation_items" class="panel panel-default">
                         <div class="panel-heading">Items</div>
                         <div class="panel-body" id="circulation_item">
-                            {{ warnings(item_warnings) }}
-                            <ul class="list-inline">
-                            {% for item in items %}
-                                <li>
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            <div class="btn-group" role="group">
-                                                <a class="btn btn-default" href="/circulation/entities/item/{{item.id}}" role="button">{{item.id}}</a>
-                                                <button type="button" class="btn btn-danger entity_delete" id="delete_item_{{item.id}}">Remove</button>
-                                                </div>
-                                        </div>
-                                        <div class="panel-body">
-                                            <div class="row">
-                                                <div class="col-md-12" style="max-width:200px"><b>{{item.record.title}}</b></div>
-                                                <div class="col-md-12">{{item.barcode}}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                            </ul>
+                            {% if items %}
+                                {{ warnings(item_warnings) }}
+                                <table class="table table-hover">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Barcode</th>
+                                        <th>Title</th>
+                                        <th>Status</th>
+                                        <th>Location</th>
+                                        <th>Shelf Number</th>
+                                        <th>Record ID</th>
+                                        <th class="col-md-1">Action</th>
+                                    </tr>
+                                    {% for entity in items %}
+                                        <tr onclick="document.location = '/circulation/entities/item/{{entity.id}}'">
+                                            <td><a href="/circulation/entities/item/{{entity.id}}">{{entity.id}}</a></td>
+                                            <td>{{entity.barcode}}</td>
+                                            <td>{{entity.record.title}}</td>
+                                            <td>{{entity.current_status}}</td>
+                                            <td>{{entity.location.name}}</td>
+                                            <td>{{entity.shelf_number}}</td>
+                                            <td>{{entity.record.id}}</td>
+                                            <td class="col-md-1"><button type="button" class="btn btn-danger entity_delete" id="delete_item_{{entity.id}}">Remove</button></td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                            {% endif %}
                         </div>
                     </div>
 
