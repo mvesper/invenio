@@ -24,8 +24,6 @@
 {% from 'macros.html' import options %}
 {% from 'macros.html' import warnings %}
 
-{% from 'macros_entities.html' import user as _user %}
-
 {% block global_bundles %}
   {{ super() }}
   {% bundles "user.js", "circulation.css" %}
@@ -34,8 +32,31 @@
 {%- block circulation_body -%}
 <div id="circulation_search_result">
     {% if user %}
-        {{ _user(id=user.id, ccid=user.ccid, name=user.name, email=user.email) }}
+    <div class="panel panel-default" id="user_{{id}}">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-md-10">
+                    <a href="/circulation/entities/user/{{user.id}}">User {{user.id}}</a>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-2">CCID</div>
+                <div class="col-md-10">{{user.ccid}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">NAME</div>
+                <div class="col-md-10">{{user.name}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-2">Email</div>
+                <div class="col-md-10">{{user.email}}</div>
+            </div>
+        </div>
+    </div>
     {% endif %}
+
 
     <div class="panel panel-default" id="record_{{record.id}}">
         <div class="panel-heading">

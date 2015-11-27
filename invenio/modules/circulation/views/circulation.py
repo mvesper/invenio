@@ -72,6 +72,7 @@ def circulation_search(search_string):
 
         # If the search returns results for items and records, the records
         # are prefered
+        # It might make sense to introduce a finer differentiation here
         item_tmp = [] if item_tmp and record_tmp else item_tmp
 
         item_ids += item_tmp
