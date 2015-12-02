@@ -1,1 +1,19 @@
-<p><i class="glyphicon glyphicon-book"></i><a href="circulation/user/{{current_user.get_id()}}/record/{{record_id}}">Library Copies</a></p>
+{% if library_items %}
+<p>
+    <i class="glyphicon glyphicon-book"></i><a href="circulation/user/{{current_user.get_id()}}/record/{{record_id}}">Library Copies</a>
+</p>
+{% endif %}
+
+{% if ill or acquisition %}
+    <p>
+        {% if ill %}
+            <a href="circulation/ill/request_ill/{{current_user.get_id()}}/{{record_id}}">Request Inter Library Loan</a>
+        {% endif %}
+        {% if ill and acquisition %}
+            |
+        {% endif %}
+        {% if acquisition %}
+            <a href="circulation/acquisition/request_acquisition/{{current_user.get_id()}}/{{record_id}}">Purchase it for me</a>
+        {% endif %}
+    </p>
+{% endif %}

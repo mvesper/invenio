@@ -337,4 +337,4 @@ TEST_SUITE = make_test_suite(TestCirculationLoanApi,
                              TestCirculationRequestApi,
                              TestCirculationReturnApi)
 if __name__ == "__main__":
-       run_test_suite(TEST_SUITE)
+   run_test_suite(TEST_SUITE)

@@ -174,7 +174,7 @@ class CirculationObject(object):
     @session_manager
     def save(self):
         """Save object to persistent storage."""
-        # Diry shit :(
+        # Dirty shit :(
         '''
         The ArrayType attribute is not tracked by SQLAlchemy, which means that
         calling save will never actually write it to the DB. Marking it as
