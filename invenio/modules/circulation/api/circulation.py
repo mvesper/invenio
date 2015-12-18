@@ -289,6 +289,8 @@ def return_items(items):
     except ValidationExceptions as e:
         raise e
 
+    from invenio.modules.circulation.signals import item_returned
+
     for item in items:
         item.current_status = CirculationItem.STATUS_ON_SHELF
         item.save()
@@ -303,3 +305,5 @@ def return_items(items):
         create_event(user_id=clc.user.id, item_id=item.id,
                      loan_cycle_id=clc.id,
                      event=CirculationEvent.EVENT_CLC_FINISHED)
+
+        item_returned.send(item.id)

@@ -32,11 +32,17 @@ def users_current_holds(user_id):
     editor_schema = json.dumps(aggrs.CirculationUserAggregator._json_schema,
                                default=datetime_serial)
 
+    # Signal to get other holds
+    from invenio.modules.circulation.signals import user_current_holds
+    additional = {key: value for _, _result in user_current_holds.send(user_id)
+                  for key, value in _result.items()}
+
     return render_template('user/current_holds.html',
                            editor_data=editor_data,
                            editor_schema=editor_schema,
                            current_loans=current_loans,
-                           current_requests=current_requests)
+                           current_requests=current_requests,
+                           additional=additional)
 
 
 def _get_current(user_id, status):
@@ -156,13 +162,26 @@ def run_action(action, user_id, item_id, clc_id, start_date, end_date,
     requested_end_date = (dds(requested_end_date, df).date()
                           if requested_end_date else None)
 
-    filter_params(funcs[action],
-                  user=user, items=items, clcs=[clc],
-                  start_date=start_date, end_date=end_date,
-                  requested_end_date=requested_end_date,
-                  waitlist=waitlist, delivery=delivery)
+    try:
+        filter_params(funcs[action],
+                      user=user, items=items, clcs=[clc],
+                      start_date=start_date, end_date=end_date,
+                      requested_end_date=requested_end_date,
+                      waitlist=waitlist, delivery=delivery)
+        msg = _get_message(action)
+    except Exception:
+        from invenio.modules.circulation.signals import (
+                user_current_holds_action)
+        data = {'user_id': user_id, 'item_id': item_id, 'clc_id': clc_id,
+                'start_date': start_date, 'end_date': end_date,
+                'requested_end_date': requested_end_date}
+        res = user_current_holds_action.send(action, data=data)
+        if not res:
+            raise
 
-    flash(_get_message(action))
+        msg = res[0][1]
+
+    flash(msg)
     return ('', 200)
 
 

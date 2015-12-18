@@ -1,0 +1,93 @@
+{# -*- coding: utf-8 -*-
+#
+# This file is part of Invenio.
+# Copyright (C) 2015 CERN.
+#
+# Invenio is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# Invenio is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Invenio; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#}
+
+{%- extends 'page.html' -%}
+
+{% block global_bundles %}
+  {{ super() }}
+  {% bundles "circulation_ill.js", "circulation_ill.css" %}
+{% endblock %}
+
+{% from 'macros.html' import options %}
+
+{%- block body -%}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div id="circulation_alert" class="alert alert-success" role="alert">
+            {% for message in messages %}
+                {{message}}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div id="ill_document" data-record_id="{{record_id}}" data-user_id="{{user_id}}" class="panel panel-default">
+    <div class="panel-heading">Document Details</div>
+    <div class="panel-body">
+        <form id="document_form">
+            <div class="form-group">
+                <label for="exampleInputEmail1">Title</label>
+                <input id="document_title" class="form-control" value="{{title}}">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">ISBN</label>
+                <input id="document_isbn" class="form-control" value="{{isbn}}">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Authors</label>
+                <input id="document_authors" class="form-control" placeholder="Author list separated by semicolons" value="{{authors}}">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Year</label>
+                <input id="document_year" class="form-control" value="{{year}}">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Publisher</label>
+                <input id="document_publisher" class="form-control" value="{{publisher}}">
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">Request Details</div>
+    <div class="panel-body">
+        <form id="request_form">
+            <div class="form-group">
+                <label for="exampleInputEmail1">Desired Start Date</label>
+                <input id="ill_date_from" class="form-control" value="{{start_date}}">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Desired End Date</label>
+                <input id="ill_date_to" class="form-control" value="{{end_date}}">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Additional Comments</label>
+                <textarea id="request_comments" class="form-control" rows="3"></textarea>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{ options(waitlist_enable=False, delivery_enable=True, delivery=delivery) }}
+
+<button id="ill_request_submit" class="btn btn-success btn-block" type="submit">Submit</button>
+{%- endblock -%}

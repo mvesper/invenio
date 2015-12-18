@@ -112,6 +112,23 @@ class CirculationObject(object):
                 except AttributeError:
                     pass
 
+        # Getting data for other modules
+        from invenio.modules.circulation.signals import get_entity
+        try:
+            construction_data = [key
+                                 for keys in save_entity.send(cls.__name__)
+                                 for key in keys[1]]
+        except Exception:
+            construction_data = None
+
+        if construction_data:
+            for key in construction_data:
+                try:
+                    obj.__setattr__(key, data[key])
+                except KeyError:
+                    pass
+        # End
+
         return obj
 
     @classmethod
@@ -195,6 +212,23 @@ class CirculationObject(object):
         if hasattr(self, '_construction_schema'):
             for key, _ in self._construction_schema.items():
                 db_data[key] = getattr(self, key)
+
+        # Saving data for other modules
+        from invenio.modules.circulation.signals import save_entity
+        try:
+            construction_data = [key
+                                 for keys in save_entity.send(cls.__name__)
+                                 for key in keys[1]]
+        except Exception:
+            construction_data = None
+
+        if construction_data:
+            for key in construction_data:
+                try:
+                    db_data[key] = getattr(self, key)
+                except AttributeError:
+                    pass
+        # End
 
         self._data = jsonpickle.encode(db_data)
         db.session.add(self)

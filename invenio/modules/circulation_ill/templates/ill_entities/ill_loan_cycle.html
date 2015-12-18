@@ -28,23 +28,19 @@
         <th>Item ID</th>
         <th>User ID</th>
         <th>Start Date</th>
-        <th>Desired Start Date</th>
         <th>End Date</th>
-        <th>Desired End Date</th>
         <th>Issued Date</th>
         <th>Action</th>
     </tr>
     {% for entity in entities %}
         {% set delete_button = '<button type="button" class="btn btn-danger btn-block entity_delete" id="delete_' + entity.id|string + '">Delete</button>' %}
-        <tr onclick="document.location = '/circulation/entities/loan_cycle/{{entity.id}}'">
-            <td><a href="/circulation/entities/loan_cycle/{{entity.id}}">{{entity.id}}</a></td>
+        <tr onclick="document.location = '/circulation/entities/ill_loan_cycle/{{entity.id}}'">
+            <td><a href="/circulation/entities/ill_loan_cycle/{{entity.id}}">{{entity.id}}</a></td>
             <td>{{entity.current_status}}</td>
             <td>{{entity.item.id}}</td>
             <td>{{entity.user.id}}</td>
             <td>{{entity.start_date}}</td>
-            <td>{{entity.desired_start_date}}</td>
             <td>{{entity.end_date}}</td>
-            <td>{{entity.desired_end_date}}</td>
             <td>{{entity.issued_date}}</td>
             <td>{{delete_button | safe}}</td>
         </tr>

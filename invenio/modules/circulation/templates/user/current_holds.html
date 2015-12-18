@@ -70,12 +70,41 @@
                     <td>{{lc.clc.item.record.title}}</td>
                     <td>{{lc.clc.start_date}}</td>
                     <td>{{lc.clc.end_date}}</td>
-                    <td><button type="button" class="btn btn-default btn-default current_hold_user_action" id="cancel_button_{{lc.clc.id}}" data-type="clc.clc" data-clc_id="{{lc.clc.id}}" data-action="cancel">CANCEL REQUEST</button></td>
+                    <td><button type="button" class="btn btn-default current_hold_user_action" id="cancel_button_{{lc.clc.id}}" data-type="clc.clc" data-clc_id="{{lc.clc.id}}" data-action="cancel">CANCEL REQUEST</button></td>
                 </tr>
                 {% endfor %}
             </table>
         </div>
     </div>
+
+    {% for category, _data in additional.items() %}
+        <h3>{{category}}</h3>
+        <h3>{{data}}</h3>
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table">
+                    <tr>
+                    {% for header in _data.table_headers %}
+                        <th>{{header}}</th>
+                    {% endfor %}
+                        <th class="col-md-3">Actions</th>
+                    </tr>
+                    {% for data in _data.data %}
+                        <tr>
+                        {% for attr in data.attributes %}
+                            <td>{{attr}}</td>
+                        {% endfor %}
+                            <td>
+                            {% for action, name in _data.actions %}
+                                <button type="button" class="btn btn-default current_hold_user_action" data-clc_id="{{data.id}}" data-action="{{action}}">{{name}}</button>
+                            {% endfor %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endfor %}
 
 
 <div class="modal fade" id="myModal">

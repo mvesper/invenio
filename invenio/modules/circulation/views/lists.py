@@ -38,22 +38,51 @@ titles = {'on_loan_pending_requests': 'Items on loan with pending requests',
 def lists_overview():
     lists = [(link, titles[link]) for link, _ in get_circulation_lists()]
 
+    # Signal to get other entities
+    from invenio.modules.circulation.signals import lists_overview as lo
+    lists.extend([(link, title) for _, ill_lists in lo.send()
+                  for link, title in ill_lists])
+
     return render_template('lists/overview.html',
                            active_nav='lists', lists=lists)
 
 
 @blueprint.route('/lists/<list_link>')
 def list_entrance(list_link):
-    return _get_class(list_link).entrance()
+    try:
+        clazz = _get_class(list_link)
+    except Exception:
+        from invenio.modules.circulation.signals import lists_class as lc
+        try:
+            clazz = lc.send(list_link)[0][1]
+        except IndexError:
+            raise Exception('Unkown entity: {0}'.format(list_link))
+
+    return clazz.entrance()
 
 
 @blueprint.route('/lists/<list_link>/detail/')
 @blueprint.route('/lists/<list_link>/detail/<query>')
 def list_detail(list_link, query=None):
-    return _get_class(list_link).detail(**json.loads(query))
+    try:
+        clazz = _get_class(list_link)
+    except Exception:
+        from invenio.modules.circulation.signals import lists_class as lc
+        try:
+            clazz = lc.send(list_link)[0][1]
+        except IndexError:
+            raise Exception('Unkown entity: {0}'.format(list_link))
+
+    try:
+        data = json.loads(query)
+    except Exception:
+        data = {}
+
+    return clazz.detail(**data)
 
 
 def _get_class(link):
     for _link, clazz in get_circulation_lists():
         if link == _link:
             return clazz
+    raise Exception

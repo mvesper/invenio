@@ -76,6 +76,12 @@ aggregators = {'record': aggregators.CirculationRecordAggregator,
 def entities_overview():
     entities = [(val['name'], key) for key, val
                 in sorted(models_entities.items(), key=lambda x: x[1]['_pos'])]
+
+    # Signal to get other entities
+    from invenio.modules.circulation.signals import entities_overview
+    entities.extend([(name, link) for _, _entities in entities_overview.send()
+                     for name, link in _entities])
+
     return render_template('entities/overview.html',
                            active_nav='entities', entities=entities)
 
@@ -89,17 +95,39 @@ def entities_hub(entity):
 @blueprint.route('/entities/action/search/<entity>')
 @blueprint.route('/entities/action/search/<entity>/<search>')
 def entity_hub_search(entity, search=''):
-    entities = models_entities[entity]['class'].search(search)
+    try:
+        entities = models_entities[entity]['class'].search(search)
+        template = 'entities/'+entity+'.html'
+    except KeyError:
+        from invenio.modules.circulation.signals import entities_hub_search
+        try:
+            res = entities_hub_search.send(entity)[0][1]
+            entities = res[0].search(search)
+            template = res[1]
+        except IndexError:
+            raise Exception('Unknown entity: {0}'.format(entity))
 
-    return render_template('entities/'+entity+'.html',
+    return render_template(template,
                            active_nav='entities',
                            entities=entities, entity=entity)
 
 
 @blueprint.route('/entities/<entity>/<id>')
 def entity(entity, id):
-    clazz = models_entities[entity]['class']
-    aggregator = aggregators[entity]
+    try:
+        clazz = models_entities[entity]['class']
+        aggregator = aggregators[entity]
+        template = 'entities/'+entity+'_detail.html'
+    except KeyError:
+        from invenio.modules.circulation.signals import entity as _entity
+        try:
+            res = _entity.send(entity)[0][1]
+            clazz = res[0]
+            aggregator = res[1]
+            template = res[2]
+        except IndexError:
+            raise Exception('Unknown entity: {0}'.format(entity))
+
 
     obj = clazz.get(id)
     aggregated = aggregator.get_aggregated_info(obj)
@@ -112,11 +140,11 @@ def entity(entity, id):
                                default=datetime_serial)
 
     try:
-        suggestions_config = json.dumps(aggregators[entity]._suggestions_config)
+        suggestions_config = json.dumps(aggregator._suggestions_config)
     except AttributeError:
         suggestions_config = json.dumps(None)
 
-    return render_template('entities/'+entity+'_detail.html',
+    return render_template(template,
                            active_nav='entities',
                            editor_data=editor_data,
                            editor_schema=editor_schema,
@@ -143,10 +171,21 @@ def _try_actions(entity, functions, obj):
 
 @blueprint.route('/entities/action/create/<entity>')
 def entity_new(entity):
-    # entering the certain values is going to break and doesn't make sense,
-    # so they will be removed here
-    editor_schema = aggregators[entity]._json_schema
+    try:
+        aggregator = aggregators[entity]
+    except KeyError:
+        from invenio.modules.circulation.signals import (
+                entity_new as _entity_new)
 
+        try:
+            aggregator = _entity_new.send(entity)[0][1]
+        except Exception:
+            raise Exception('Unknown entity: {0}'.format(entity))
+
+    editor_schema = aggregator._json_schema
+
+    # entering certain values is going to break and doesn't make sense,
+    # so they will be removed here
     for key in ['id', 'group_uuid', 'creation_date']:
         try:
             del editor_schema['properties'][key]
@@ -154,7 +193,7 @@ def entity_new(entity):
             pass
 
     try:
-        suggestions_config = json.dumps(aggregators[entity]._suggestions_config)
+        suggestions_config = json.dumps(aggregator._suggestions_config)
     except AttributeError:
         suggestions_config = json.dumps(None)
 
@@ -213,9 +252,21 @@ def api_entity_search(entity, search):
 @blueprint.route('/api/entity/create', methods=['POST'])
 @extract_params
 def api_entity_create(entity, data):
-    name = models_entities[entity]['name']
+    try:
+        name = models_entities[entity]['name']
+        entity = apis[entity].create(**data)
+    except KeyError:
+        from invenio.modules.circulation.signals import (
+                entity_create as _entity_create)
 
-    entity = apis[entity].create(**data)
+        try:
+            res = _entity_create.send(entity)[0][1]
+            name = res[0]
+            entity = res[1].create(**data)
+        except Exception:
+            raise Exception('Unknown entity: {0}'.format(entity))
+
+
     flash('Successfully created a new {0} with id {1}.'.format(name,
                                                                entity.id))
     return ('', 200)
@@ -224,10 +275,23 @@ def api_entity_create(entity, data):
 @blueprint.route('/api/entity/update', methods=['POST'])
 @extract_params
 def api_entity_update(id, entity, data):
-    name = models_entities[entity]['name']
-    clazz = models_entities[entity]['class']
+    try:
+        name = models_entities[entity]['name']
+        clazz = models_entities[entity]['class']
+        api = apis[entity]
+    except KeyError:
+        from invenio.modules.circulation.signals import (
+                entity_update as _entity_update)
 
-    apis[entity].update(clazz.get(id), **data)
+        try:
+            res = _entity_update.send(entity)[0][1]
+            name = res[0]
+            clazz = res[1]
+            api = res[2]
+        except Exception:
+            raise Exception('Unknown entity: {0}'.format(entity))
+
+    api.update(clazz.get(id), **data)
 
     flash('Successfully updated the {0} with id {1}.'.format(name, id))
     return ('', 200)
@@ -236,10 +300,23 @@ def api_entity_update(id, entity, data):
 @blueprint.route('/api/entity/delete', methods=['POST'])
 @extract_params
 def api_entity_delete(id, entity):
-    name = models_entities[entity]['name']
-    clazz = models_entities[entity]['class']
+    try:
+        name = models_entities[entity]['name']
+        clazz = models_entities[entity]['class']
+        api = apis[entity]
+    except KeyError:
+        from invenio.modules.circulation.signals import (
+                entity_delete as _entity_delete)
 
-    apis[entity].delete(clazz.get(id))
+        try:
+            res = _entity_delete.send(entity)[0][1]
+            name = res[0]
+            clazz = res[1]
+            api = res[2]
+        except Exception:
+            raise Exception('Unknown entity: {0}'.format(entity))
+
+    api.delete(clazz.get(id))
 
     flash('Successfully deleted the {0} with id {1}.'.format(name, id))
     return ('', 200)
