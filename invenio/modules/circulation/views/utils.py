@@ -8,6 +8,27 @@ from flask import request
 from dateutil import relativedelta
 
 
+def send_signal(signal, sender, data):
+    res = {x[1]['name']: x[1] for x in signal.send(sender, data=data)}
+
+    to_block = []
+    for value in res.values():
+        if 'misc' in value:
+            for val in value:
+                if val['action'] == 'block':
+                    to_block.append(val['target'])
+
+    for name in to_block:
+        try:
+            del res[name]
+        except KeyError:
+            pass
+
+    return [x['result']
+            for x in sorted(res.values(), key=lambda x: x.get('priority', 0.5))
+            if x['result'] is not None]
+
+
 def extract_params(func):
     _args = inspect.getargspec(func).args
 
@@ -80,3 +101,7 @@ def _get_cal_heatmap_range(items):
     max_date = max(max_dates)
 
     return relativedelta.relativedelta(max_date, min_date).months + 1
+
+
+def flatten(l):
+    return [x for sublist in l for x in sublist]

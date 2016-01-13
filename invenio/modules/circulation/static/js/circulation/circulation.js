@@ -72,8 +72,10 @@ function($, ch) {
     });
 
     $('#circulation_search_result').on("click", ".entity_delete", function(event){
-        var entity = event.target.id.split('_')[1];
-        var id = event.target.id.split('_')[2];
+        var entity = $(event.target).data()['entity'];
+        var id = $(event.target).data()['id'];
+        //var entity = event.target.id.split('_')[1];
+        //var id = event.target.id.split('_')[2];
         var from = $('#circulation_date_from').val();
         var to = $('#circulation_date_to').val();
         var waitlist = $('#circulation_option_waitlist').is(':checked');
@@ -87,8 +89,9 @@ function($, ch) {
         window.location.href = '/circulation/circulation/' + encodeURIComponent(state_string);
     });
 
-    $('#circulation_validation').on("click", ".btn", function(event){
-        var action = event.target.id.split('_')[0];
+    $('#circulation_actions').on("click", ".btn", function(event){
+        var action = $(event.target).data()['action'];
+        //var action = event.target.id.split('_')[0];
         var circulation_state = get_circulation_state();
 
         var from = $('#circulation_date_from').val();

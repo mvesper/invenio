@@ -21,57 +21,37 @@ import json
 
 from flask import Blueprint, render_template
 
-from invenio.modules.circulation.lists import get_circulation_lists
+from invenio.modules.circulation.views.utils import send_signal, flatten
 
 blueprint = Blueprint('lists', __name__, url_prefix='/circulation',
                       template_folder='../templates',
                       static_folder='../static')
 
-titles = {'on_loan_pending_requests': 'Items on loan with pending requests',
-          'on_shelf_pending_requests': 'Items on shelf with pending requests',
-          'overdue_pending_requests': 'Overdue items with pending requests',
-          'overdue_items': 'Overdue Items',
-          'latest_loans': 'Latest Loans'}
-
 
 @blueprint.route('/lists')
 def lists_overview():
-    lists = [(link, titles[link]) for link, _ in get_circulation_lists()]
+    from invenio.modules.circulation.signals import (
+            lists_overview as _lists_overview)
 
-    # Signal to get other entities
-    from invenio.modules.circulation.signals import lists_overview as lo
-    lists.extend([(link, title) for _, ill_lists in lo.send()
-                  for link, title in ill_lists])
-
+    lists = flatten(send_signal(_lists_overview, 'lists_overview', None))
     return render_template('lists/overview.html',
                            active_nav='lists', lists=lists)
 
 
 @blueprint.route('/lists/<list_link>')
 def list_entrance(list_link):
-    try:
-        clazz = _get_class(list_link)
-    except Exception:
-        from invenio.modules.circulation.signals import lists_class as lc
-        try:
-            clazz = lc.send(list_link)[0][1]
-        except IndexError:
-            raise Exception('Unkown entity: {0}'.format(list_link))
+    from invenio.modules.circulation.signals import lists_class
 
+    clazz = send_signal(lists_class, list_link, None)[0]
     return clazz.entrance()
 
 
 @blueprint.route('/lists/<list_link>/detail/')
 @blueprint.route('/lists/<list_link>/detail/<query>')
 def list_detail(list_link, query=None):
-    try:
-        clazz = _get_class(list_link)
-    except Exception:
-        from invenio.modules.circulation.signals import lists_class as lc
-        try:
-            clazz = lc.send(list_link)[0][1]
-        except IndexError:
-            raise Exception('Unkown entity: {0}'.format(list_link))
+    from invenio.modules.circulation.signals import lists_class
+
+    clazz = send_signal(lists_class, list_link, None)[0]
 
     try:
         data = json.loads(query)
@@ -79,10 +59,3 @@ def list_detail(list_link, query=None):
         data = {}
 
     return clazz.detail(**data)
-
-
-def _get_class(link):
-    for _link, clazz in get_circulation_lists():
-        if link == _link:
-            return clazz
-    raise Exception

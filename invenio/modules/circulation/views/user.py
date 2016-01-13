@@ -3,16 +3,14 @@ import json
 
 import invenio.modules.circulation.api as api
 import invenio.modules.circulation.models as models
-import invenio.modules.circulation.aggregators as aggrs
 
 from invenio.modules.circulation.views.utils import (datetime_serial,
-                                                     extract_params,
-                                                     filter_params,
                                                      _get_cal_heatmap_dates,
-                                                     _get_cal_heatmap_range)
+                                                     _get_cal_heatmap_range,
+                                                     send_signal)
 from invenio.modules.circulation.api.utils import ValidationExceptions
 
-from flask import Blueprint, render_template, flash
+from flask import Blueprint, render_template
 
 
 blueprint = Blueprint('user', __name__, url_prefix='/circulation',
@@ -22,45 +20,23 @@ blueprint = Blueprint('user', __name__, url_prefix='/circulation',
 
 @blueprint.route('/user/<user_id>', methods=['GET'])
 def users_current_holds(user_id):
-    SL = models.CirculationLoanCycle.STATUS_ON_LOAN
-    SR = models.CirculationLoanCycle.STATUS_REQUESTED
-    current_loans = _get_current(user_id, SL)
-    current_requests = _get_current(user_id, SR)
-
-    editor_data = json.dumps(models.CirculationUser.get(user_id).jsonify(),
-                             default=datetime_serial)
-    editor_schema = json.dumps(aggrs.CirculationUserAggregator._json_schema,
-                               default=datetime_serial)
-
-    # Signal to get other holds
     from invenio.modules.circulation.signals import user_current_holds
-    additional = {key: value for _, _result in user_current_holds.send(user_id)
-                  for key, value in _result.items()}
+
+    obj = models.CirculationUser.get(user_id)
+    editor_data = json.dumps(obj.jsonify(), default=datetime_serial)
+    editor_schema = json.dumps(obj._json_schema, default=datetime_serial)
+
+    holds = send_signal(user_current_holds, 'user_current_holds', user_id)
 
     return render_template('user/current_holds.html',
                            editor_data=editor_data,
                            editor_schema=editor_schema,
-                           current_loans=current_loans,
-                           current_requests=current_requests,
-                           additional=additional)
-
-
-def _get_current(user_id, status):
-    def make_dict(clc):
-        return {'clc': clc,
-                'cal_data': json.dumps(_get_cal_heatmap_dates([clc.item])),
-                'cal_range': _get_cal_heatmap_range([clc.item])}
-
-    query = 'user_id:{0} current_status:{1}'.format(user_id, status)
-
-    return [make_dict(clc) for clc
-            in models.CirculationLoanCycle.search(query)]
+                           holds=holds)
 
 
 @blueprint.route('/user/<user_id>/record/<record_id>', methods=['GET'])
 @blueprint.route('/user/<user_id>/record/<record_id>/<state>', methods=['GET'])
 def user_record_actions(user_id, record_id, state=None):
-    #import ipdb; ipdb.set_trace()
     try:
         user = models.CirculationUser.get(user_id)
     except Exception:
@@ -126,76 +102,3 @@ def _get_record_items(record_id, user, start_date, end_date, waitlist):
                       'warnings': json.dumps(warnings)})
 
     return items
-
-
-@blueprint.route('/api/user/run_action', methods=['POST'])
-@extract_params
-def run_action(action, user_id, item_id, clc_id, start_date, end_date,
-               requested_end_date, waitlist, delivery):
-    def _get_message(action):
-        if action == 'lose':
-            lm = 'The item: {0} was successfully reported as lost.'
-            return lm.format(items[0].barcode)
-        elif action == 'extension':
-            em = 'Successfully requested an loan extension on item {0}.'
-            return em.format(items[0].barcode)
-        elif action == 'cancel':
-            cm = 'The request on the item: {0} was successfully canceled.'
-            return cm.format(clc.item.barcode)
-        elif action == 'request':
-            rm = 'The item: {0} were successfully requested by the user: {1}.'
-            return rm.format(items[0].barcode, user.id)
-
-    funcs = {'lose': api.item.lose_items,
-             'extension': api.loan_cycle.loan_extension,
-             'cancel': api.loan_cycle.cancel_clcs,
-             'request': api.circulation.request_items}
-
-    df = '%Y-%m-%d'
-    dds = datetime.datetime.strptime
-
-    user = models.CirculationUser.get(user_id) if user_id else None
-    items = [models.CirculationItem.get(item_id)] if item_id else None
-    clc = models.CirculationLoanCycle.get(clc_id) if clc_id else None
-    start_date = dds(start_date, df).date() if start_date else None
-    end_date = dds(end_date, df).date() if end_date else None
-    requested_end_date = (dds(requested_end_date, df).date()
-                          if requested_end_date else None)
-
-    try:
-        filter_params(funcs[action],
-                      user=user, items=items, clcs=[clc],
-                      start_date=start_date, end_date=end_date,
-                      requested_end_date=requested_end_date,
-                      waitlist=waitlist, delivery=delivery)
-        msg = _get_message(action)
-    except Exception:
-        from invenio.modules.circulation.signals import (
-                user_current_holds_action)
-        data = {'user_id': user_id, 'item_id': item_id, 'clc_id': clc_id,
-                'start_date': start_date, 'end_date': end_date,
-                'requested_end_date': requested_end_date}
-        res = user_current_holds_action.send(action, data=data)
-        if not res:
-            raise
-
-        msg = res[0][1]
-
-    flash(msg)
-    return ('', 200)
-
-
-@blueprint.route('/api/user/try_action', methods=['POST'])
-@extract_params
-def try_action(action, clc_id, requested_end_date):
-    dds = datetime.datetime.strptime
-    requested_end_date = dds(requested_end_date, "%Y-%m-%d").date()
-
-    if action == 'extension':
-        clcs = [models.CirculationLoanCycle.get(clc_id)]
-        try:
-            api.loan_cycle.try_loan_extension(clcs, requested_end_date)
-            return json.dumps({'status': 200})
-        except ValidationExceptions:
-            pass
-        return json.dumps({'status': 400})

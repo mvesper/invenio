@@ -11,8 +11,10 @@ def get_circulation_event_entity(sender):
     return ['ill_loan_cycle_id']
 
 
-def get_ill_entities(sender):
-    return [('ILL Loan Cycle', 'ill_loan_cycle')]
+def get_ill_entities(sender, data):
+    return {'name': 'ill_entity',
+            'priority': 1.0,
+            'result': [('ILL Loan Cycle', 'ill_loan_cycle')]}
 
 
 def ill_search(sender):
@@ -56,20 +58,26 @@ def get_entity_delete(sender):
     return ('IllLoanCycle', models.IllLoanCycle, api)
 
 
-def get_ill_lists(sender):
-    return [('requested_ills', 'Requested Inter Library Loans'),
-            ('confirmed_ills', 'Confirmed Inter Library Loans')]
+def get_ill_lists(sender, data):
+    return {'name': 'ill_lists',
+            'priority': 1.0,
+            'result': [('Requested Inter Library Loans', 'requested_ills'),
+                       ('Confirmed Inter Library Loans', 'confirmed_ills')]}
 
 
-def get_ill_class(sender):
+def get_ill_class(sender, data):
+    clazz = None
     if sender == 'requested_ills':
         from invenio.modules.circulation_ill.lists.requested_ills import (
                 RequestedIlls)
-        return RequestedIlls
+        clazz = RequestedIlls
     elif sender == 'confirmed_ills':
         from invenio.modules.circulation_ill.lists.confirmed_ills import (
                 ConfirmedIlls)
-        return ConfirmedIlls
+        clazz = ConfirmedIlls
+
+    return {'name': 'ill_lists',
+            'result': clazz}
 
 
 def get_returned_items_ill_clc(item_id):

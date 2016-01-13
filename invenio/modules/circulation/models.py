@@ -326,6 +326,22 @@ def _get_authors(rec):
 
 
 class CirculationRecord(CirculationObject):
+    _json_schema = {'type': 'object',
+                    'title': 'Record',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'title': {'type': 'string'},
+                        'abstract': {'type': 'string', 'format': 'textarea'},
+                        'authors': {
+                            'type': 'array',
+                            'format': 'table',
+                            'items': {
+                                'type': 'string',
+                                'title': 'Authors',
+                                }
+                            }
+                        }
+                    }
 
     _construction_schema = {
             'id': lambda x: x['control_number'],
@@ -411,6 +427,23 @@ class CirculationItem(CirculationObject, db.Model):
     STATUS_ON_LOAN = 'on_loan'
     STATUS_IN_PROCESS = 'in_process'
 
+    _json_schema = {'type': 'object',
+                    'title': 'Item',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'record_id': {'type': 'integer'},
+                        'location_id': {'type': 'integer'},
+                        'isbn': {'type': 'string'},
+                        'barcode': {'type': 'string'},
+                        'collection': {'type': 'string'},
+                        'shelf_number': {'type': 'string'},
+                        'description': {'type': 'string'},
+                        'item_group': {'type': 'string'},
+                        'current_status': {'type': 'string'},
+                        'volume': {'type': 'string'},
+                        }
+                    }
+
     @db.reconstructor
     def init_on_load(self):
         self.record = CirculationRecord.get(self.record_id)
@@ -443,6 +476,23 @@ class CirculationLoanCycle(CirculationObject, db.Model):
 
     DELIVERY_DEFAULT = 'Pick up'
 
+    _json_schema = {'type': 'object',
+                    'title': 'Loan Cycle',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'item_id': {'type': 'integer'},
+                        'user_id': {'type': 'integer'},
+                        'group_uuid': {'type': 'string'},
+                        'current_status': {'type': 'string'},
+                        'start_date': {'type': 'string'},
+                        'end_date': {'type': 'string'},
+                        'desired_start_date': {'type': 'string'},
+                        'desired_end_date': {'type': 'string'},
+                        'issued_date': {'type': 'string'},
+                        'requested_extension_end_date': {'type': 'string'},
+                        }
+                    }
+
 
 class CirculationUser(CirculationObject, db.Model):
     __tablename__ = 'circulation_user'
@@ -463,6 +513,22 @@ class CirculationUser(CirculationObject, db.Model):
 
     GROUP_DEFAULT = 'default'
 
+    _json_schema = {'type': 'object',
+                    'title': 'User',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'invenio_user_id': {'type': 'integer'},
+                        'ccid': {'type': 'string'},
+                        'name': {'type': 'string'},
+                        'address': {'type': 'string'},
+                        'mailbox': {'type': 'string'},
+                        'email': {'type': 'string'},
+                        'phone': {'type': 'string'},
+                        'notes': {'type': 'string'},
+                        'user_group': {'type': 'string'}
+                        }
+                    }
+
 
 class CirculationLocation(CirculationObject, db.Model):
     __tablename__ = 'circulation_location'
@@ -473,6 +539,18 @@ class CirculationLocation(CirculationObject, db.Model):
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     _data = db.Column(db.LargeBinary)
+
+    _json_schema = {'type': 'object',
+                    'title': 'Location',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'name': {'type': 'string'},
+                        'code': {'type': 'string'},
+                        'notes': {'type': 'string',
+                                  'format': 'textarea',
+                                  'options': {'expand_height': True}},
+                        }
+                    }
 
 
 class CirculationMailTemplate(CirculationObject, db.Model):
@@ -485,6 +563,19 @@ class CirculationMailTemplate(CirculationObject, db.Model):
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     _data = db.Column(db.LargeBinary)
+
+    _json_schema = {'type': 'object',
+                    'title': 'Mail Template',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'template_name': {'type': 'string'},
+                        'subject': {'type': 'string'},
+                        'header': {'type': 'string'},
+                        'content': {'type': 'string',
+                                    'format': 'textarea',
+                                    'options': {'expand_height': True}},
+                        }
+                    }
 
 
 class CirculationLoanRule(CirculationObject, db.Model):
@@ -501,6 +592,19 @@ class CirculationLoanRule(CirculationObject, db.Model):
     modification_date = db.Column(db.DateTime)
     _data = db.Column(db.LargeBinary)
 
+    _json_schema = {'type': 'object',
+                    'title': 'Loan Rule',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'name': {'type': 'string'},
+                        'type': {'type': 'string'},
+                        'loan_period': {'type': 'integer'},
+                        'holdable': {'type': 'boolean'},
+                        'home_pickup': {'type': 'boolean'},
+                        'automatic_recall': {'type': 'boolean'},
+                        }
+                    }
+
 
 class CirculationLoanRuleMatch(CirculationObject, db.Model):
     __tablename__ = 'circulation_loan_rule_match'
@@ -516,6 +620,18 @@ class CirculationLoanRuleMatch(CirculationObject, db.Model):
     creation_date = db.Column(db.DateTime)
     modification_date = db.Column(db.DateTime)
     _data = db.Column(db.LargeBinary)
+
+    _json_schema = {'type': 'object',
+                    'title': 'Loan Rule',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'loan_rule_id': {'type': 'integer'},
+                        'item_type': {'type': 'string'},
+                        'patron_type': {'type': 'string'},
+                        'location_code': {'type': 'string'},
+                        'active': {'type': 'boolean'},
+                        }
+                    }
 
 
 class CirculationEvent(CirculationObject, db.Model):
@@ -585,6 +701,23 @@ class CirculationEvent(CirculationObject, db.Model):
     EVENT_LRM_CREATE = 'loan_rule_match_created'
     EVENT_LRM_CHANGE = 'loan_rule_match_changed'
     EVENT_LRM_DELETE = 'loan_rule_match_deleted'
+
+    _json_schema = {'type': 'object',
+                    'title': 'Event',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'user_id': {'type': 'integer'},
+                        'item_id': {'type': 'integer'},
+                        'loan_cycle_id': {'type': 'integer'},
+                        'location_id': {'type': 'integer'},
+                        'loan_rule_id': {'type': 'integer'},
+                        'loan_rule_match_id': {'type': 'integer'},
+                        'mail_template_id': {'type': 'integer'},
+                        'event': {'type': 'string'},
+                        'description': {'type': 'string'},
+                        'creation_date': {'type': 'string'},
+                        }
+                    }
 
 
 jsonpickle.handlers.registry.register(CirculationRecord,

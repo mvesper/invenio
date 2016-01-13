@@ -59,7 +59,7 @@
                                         <td>{{entity.ccid}}</td>
                                         <td>{{entity.email}}</td>
                                         <td>{{entity.user_group}}</td>
-                                        <td class="col-md-1"><button type="button" class="btn btn-danger btn-block entity_delete" id="delete_user_{{entity.id}}">Remove</button></td>
+                                        <td class="col-md-1"><button type="button" class="btn btn-danger btn-block entity_delete" data-id="{{entity.id}}" data-entity="user">Remove</button></td>
                                     </tr>
                                 {% endfor %}
                                 </table>
@@ -92,7 +92,7 @@
                                             <td>{{entity.location.name}}</td>
                                             <td>{{entity.shelf_number}}</td>
                                             <td>{{entity.record.id}}</td>
-                                            <td class="col-md-1"><button type="button" class="btn btn-danger entity_delete" id="delete_item_{{entity.id}}">Remove</button></td>
+                                            <td class="col-md-1"><button type="button" class="btn btn-danger entity_delete" data-id="{{entity.id}}" data-entity="item">Remove</button></td>
                                         </tr>
                                     {% endfor %}
                                 </table>
@@ -111,7 +111,7 @@
                                                 <a href="/circulation/entities/record/{{record.id}}">{{record.id}}</a>
                                             </div>
                                             <div class="col-md-2">
-                                                <button type="button" class="btn btn-danger btn-block entity_delete" id="delete_record_{{record.id}}">Remove</button>
+                                                <button type="button" class="btn btn-danger btn-block entity_delete" data-id="{{entity.id}}" data-entity="user">Remove</button>
                                             </div>
                                         </div>
                                     </div>
@@ -178,30 +178,16 @@
 
                     <button type="button" class="btn btn-block btn-success request_new_params" id="circulation_check_params">CHECK PARAMETERS</button>
         </div>
-        <div id="circulation_validation" class="col-md-2">
-            {% if loan is none %}
-                <button type="button" class="btn btn-block btn-default" id="loan_button" disabled="true">Loan</button>
-            {% elif loan %}
-                <button type="button" class="btn btn-block btn-success" id="loan_button">Loan</button>
-            {% else %}
-                <button type="button" class="btn btn-block btn-danger" id="loan_button" disabled="true">Loan</button>
-            {% endif %}
-
-            {% if request is none %}
-                <button type="button" class="btn btn-block btn-default" id="request_button" disabled="true">Request</button>
-            {% elif request %}
-                <button type="button" class="btn btn-block btn-success" id="request_button">Request</button>
-            {% else %}
-                <button type="button" class="btn btn-block btn-danger" id="request_button" disabled="true">Request</button>
-            {% endif %}
-
-            {% if ret is none %}
-                <button type="button" class="btn btn-block btn-default" id="return_button" disabled="true">Return</button>
-            {% elif ret %}
-                <button type="button" class="btn btn-block btn-success" id="return_button">Return</button>
-            {% else %}
-                <button type="button" class="btn btn-block btn-danger" id="return_button" disabled="true">Return</button>
-            {% endif %}
+        <div id="circulation_actions" class="col-md-2">
+            {% for button in action_buttons %}
+                {% if button.val is none %}
+                    <button type="button" class="btn btn-block btn-default" data-action="{{button.action}}" disabled="true">{{button.name}}</button>
+                {% elif button.val %}
+                    <button type="button" class="btn btn-block btn-success" data-action="{{button.action}}" >{{button.name}}</button>
+                {% else %}
+                    <button type="button" class="btn btn-block btn-danger" data-action="{{button.action}}" disabled="true">{{button.name}}</button>
+                {% endif %}
+            {% endfor %}
         </div>
 
     </div>

@@ -28,11 +28,11 @@ import invenio.modules.circulation.models as models
 from operator import itemgetter
 from flask import Blueprint, render_template, request, redirect, flash
 
-from invenio.modules.circulation.api.utils import ValidationExceptions
 from invenio.modules.circulation.views.utils import (get_date_period,
                                                      filter_params,
                                                      _get_cal_heatmap_dates,
-                                                     _get_cal_heatmap_range)
+                                                     send_signal,
+                                                     flatten)
 from invenio.modules.circulation.config import DEFAULT_LOAN_PERIOD
 
 
@@ -42,41 +42,25 @@ blueprint = Blueprint('circulation', __name__, url_prefix='/circulation',
 
 
 @blueprint.route('/', methods=['GET'])
-def circulation():
-    start_date, end_date = get_date_period(datetime.date.today(),
-                                           DEFAULT_LOAN_PERIOD)
-
-    return render_template('circulation/circulation.html',
-                           active_nav='circulation',
-                           items=[], users=[], records=[],
-                           start_date=start_date.isoformat(),
-                           end_date=end_date.isoformat(),
-                           loan=None, request=None, ret=None,
-                           cal_data=json.dumps({}), cal_range=4,
-                           waitlist=False, delivery='Pick up')
-
-
 @blueprint.route('/circulation/<search_string>', methods=['GET'])
-def circulation_search(search_string):
+def circulation_search(search_string=None):
     (item_ids, user_ids, record_ids,
      start_date, end_date,
      waitlist, delivery, search) = _get_circulation_state(search_string)
 
+    data = {'item_ids': item_ids, 'user_ids': user_ids,
+            'record_ids': record_ids,
+            'start_date': start_date, 'end_date': end_date,
+            'waitlist': waitlist, 'delivery': delivery, 'search': search}
+
     if search:
-        user_ids += [str(x.id) for x in
-                     models.CirculationUser.search(search)]
-        item_tmp = [str(x.id) for x in
-                    models.CirculationItem.search(search)]
-        record_tmp = [str(x.id) for x
-                      in models.CirculationRecord.search(search)]
+        from invenio.modules.circulation.signals import circulation_search
 
-        # If the search returns results for items and records, the records
-        # are prefered
-        # It might make sense to introduce a finer differentiation here
-        item_tmp = [] if item_tmp and record_tmp else item_tmp
-
-        item_ids += item_tmp
-        record_ids += record_tmp
+        res = send_signal(circulation_search, 'circulation_search', data)
+        for u, i, r in res:
+            user_ids += [str(x.id) for x in u]
+            item_ids += [str(x.id) for x in i]
+            record_ids += [str(x.id) for x in r]
 
         new_url = _build_circulation_state(item_ids, user_ids, record_ids,
                                            start_date, end_date,
@@ -84,18 +68,32 @@ def circulation_search(search_string):
 
         return redirect('/circulation/circulation/' + new_url)
     else:
-        items = [models.CirculationItem.get(x) for x in item_ids]
-        users = [models.CirculationUser.get(x) for x in user_ids]
-        records = [models.CirculationRecord.get(x) for x in record_ids]
+        from invenio.modules.circulation.signals import (
+                circulation_state,
+                circulation_actions)
 
-        _enhance_record_data(records)
+        users, items, records = [], [], []
 
-        _users = users[0] if (users and len(users) == 1) else users
-        _res = _circulation_try_actions(items, _users, records,
-                                        start_date, end_date, waitlist)
+        res = send_signal(circulation_state, 'circulation_state', data)
+        for u, i, r in res:
+            users += u
+            items += i
+            records += r
 
-        action_button_states = _get_action_button_state(_res)
-        _res = _remove_valid_actions(_res)
+        circ_actions = flatten(send_signal(circulation_actions,
+                                           'circulation_actions', None))
+
+        _user = users[0] if (users and len(users) == 1) else users
+
+        _res = {}
+        for name, action in circ_actions:
+            _res[action] = _try_action(
+                    action,
+                    user=_user, items=items, records=records,
+                    start_date=start_date, end_date=end_date,
+                    waitlist=waitlist, delivery=delivery)
+
+        action_buttons = _get_action_buttons(circ_actions, _res)
 
         item_warnings = _get_warnings(_res, ['items_status'])
         date_warnings = _get_warnings(_res, ['start_date', 'date_suggestion'])
@@ -107,9 +105,7 @@ def circulation_search(search_string):
                                active_nav='circulation',
                                items=items, users=users, records=records,
                                start_date=start_date, end_date=end_date,
-                               loan=action_button_states['loan'],
-                               request=action_button_states['request'],
-                               ret=action_button_states['return'],
+                               action_buttons=action_buttons,
                                cal_data=global_cal_data,
                                cal_range=global_cal_range,
                                waitlist=waitlist, delivery=delivery,
@@ -117,8 +113,10 @@ def circulation_search(search_string):
                                date_warnings=date_warnings)
 
 
-def _check(val):
-    return map(lambda x: x is True, val)
+def _try_action(action, **kwargs):
+    from invenio.modules.circulation.signals import try_action_signal
+
+    return send_signal(try_action_signal, action, kwargs)[0]
 
 
 def _get_global_cal_range(items, end_date):
@@ -131,32 +129,44 @@ def _get_global_cal_range(items, end_date):
         latest_end_date = max(_get_latest_end_date(items))
     except ValueError:
         latest_end_date = end_date
+
     latest_end_date = max(latest_end_date, end_date)
     return latest_end_date.month - datetime.date.today().month + 1
 
 
 def _get_warnings(_res, categories):
-    return [(action, message) for action, messages in _res.items()
-            for category, message in messages if category in categories]
+    res = []
+    for action, messages in _res.items():
+        try:
+            for category, message in messages:
+                if category in categories:
+                    res.append((action, message))
+        except TypeError:
+            pass
+
+    return res
 
 
-def _remove_valid_actions(_res):
-    return {key: value for key, value in _res.items()
-            if not all(_check(value))}
+def _get_action_buttons(actions, _res):
+    def _check(val):
+        ignore = [('items', 'A item is required to loan an item.'),
+                  ('user', 'A user is required to loan an item.')]
+        for x in val:
+            if x in ignore:
+                return None
 
+        return all(map(lambda x: x is True, val))
 
-def _get_action_button_state(_res):
-    return {key: (all(_check(value)) if len(value) > 0 else None)
-            for key, value in _res.items()}
+    res = []
+    for name, action in actions:
+        status = _res[action]
+        if status is True or status is False or status is None:
+            val = status
+        else:
+            val = _check(status) if len(status) > 0 else None
+        res.append({'name': name, 'val': val, 'action': action})
 
-
-def _enhance_record_data(records):
-    q = 'record_id:{0}'
-    for record in records:
-        record.items = models.CirculationItem.search(q.format(record.id))
-        for item in record.items:
-            item.cal_data = json.dumps(_get_cal_heatmap_dates([item]))
-            item.cal_range = _get_cal_heatmap_range([item])
+    return res
 
 
 def _build_circulation_state(item_ids, user_ids, record_ids,
@@ -170,6 +180,11 @@ def _build_circulation_state(item_ids, user_ids, record_ids,
 
 def _get_circulation_state(search_string):
     # <item_ids>:<user_ids>:<record_ids>:<s_date>:<e_date>:<waitlist>:<delivery>:<search_string>
+    if not search_string:
+        start_date, end_date = get_date_period(datetime.date.today(),
+                                               DEFAULT_LOAN_PERIOD)
+        return [], [], [], start_date, end_date, False, 'Pick up', ''
+
     (item_ids, user_ids, record_ids,
      start_date, end_date,
      waitlist, delivery, search) = search_string.split(':', 7)
@@ -187,56 +202,18 @@ def _get_circulation_state(search_string):
             start_date, end_date, waitlist, delivery, search)
 
 
-def _circulation_try_actions(items, user, records,
-                             start_date, end_date, waitlist):
-    res = {'loan': [], 'request': [], 'return': []}
-    funcs = {'loan': api.try_loan_items, 'request': api.try_request_items,
-             'return': api.try_return_items}
-
-    if items:
-        for key, func in funcs.items():
-            try:
-                filter_params(func, user=user, items=items,
-                              start_date=start_date, end_date=end_date,
-                              waitlist=waitlist, delivery=None)
-                res[key].append(True)
-            except ValidationExceptions as e:
-                res[key].extend([(ex[0], str(ex[1])) for ex in e.exceptions])
-
-    return res
-
-
 @blueprint.route('/api/circulation/run_action', methods=['POST'])
 def api_circulation_run_action():
-    def _get_message(action):
-        if action == 'loan':
-            lm = 'The item(s): {0} were successfully loaned to the user: {1}.'
-            return lm.format(', '.join(x.barcode for x in items), user.ccid)
-        elif action == 'request':
-            rm = 'The item(s): {0} were successfully requested by the user: {1}.'
-            return rm.format(', '.join(x.barcode for x in items), user.ccid)
-        elif action == 'return':
-            rm = 'The item(s): {0} where successfully returned.'
-            return rm.format(', '.join(x.barcode for x in items))
+    from invenio.modules.circulation.signals import (run_action_signal,
+                                                     convert_params) 
 
-    funcs = {'loan': api.loan_items,
-             'request': api.request_items,
-             'return': api.return_items}
     data = json.loads(request.get_json())
 
-    action, search_string = itemgetter('action', 'circulation_state')(data)
+    res = send_signal(convert_params, data['action'], data)
+    for key, value in reduce(lambda x, y: dict(x, **y), res):
+        data[key] = value
 
-    (item_ids, user_ids, record_ids,
-     start_date, end_date,
-     waitlist, delivery, search) = _get_circulation_state(search_string)
+    message = send_signal(run_action_signal, data['action'], data)[0]
 
-    user = models.CirculationUser.get(user_ids[0]) if user_ids else None
-    items = [models.CirculationItem.get(x) for x in item_ids]
-
-    filter_params(funcs[action],
-                  user=user, items=items,
-                  start_date=start_date, end_date=end_date,
-                  waitlist=waitlist, delivery=delivery)
-
-    flash(_get_message(action))
+    flash(message)
     return ('', 200)

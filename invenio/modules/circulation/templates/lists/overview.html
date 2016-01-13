@@ -22,7 +22,7 @@
 
 {%- block circulation_body -%}
 <ul class="list-group">
-    {% for link, name in lists %}
+    {% for name, link in lists %}
         <li type="button" class="list-group-item">
             <a href="/circulation/lists/{{link}}">{{name}}</a>
         </li>

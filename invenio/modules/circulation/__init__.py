@@ -17,4 +17,9 @@
 # along with Invenio; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-from invenio.modules.circulation.receivers import *
+from invenio.modules.circulation.receivers.misc import *
+from invenio.modules.circulation.receivers.circulation import *
+from invenio.modules.circulation.receivers.entity import *
+from invenio.modules.circulation.receivers.user import *
+from invenio.modules.circulation.receivers.lists import *
+from invenio.modules.circulation.receivers.utils import *
