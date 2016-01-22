@@ -29,13 +29,16 @@ user_current_holds_action = cs.signal('user_current_holds_action')
 
 # CIRCULATION
 
+circulation_current_state = cs.signal('circulation_current_state')
 circulation_search = cs.signal('circulation_search')
 circulation_state = cs.signal('circulation_state')
 circulation_actions = cs.signal('circulation_actions')
 
-try_action_signal = cs.signal('try_action_signal')
-run_action_signal = cs.signal('run_action_signal')
+try_action = cs.signal('try_action')
+run_action = cs.signal('run_action')
 
 convert_params = cs.signal('convert_params')
 
-apis = cs.signal('apis')
+circ_apis = cs.signal('circ_apis')
+
+record_actions = cs.signal('record_actions')

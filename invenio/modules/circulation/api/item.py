@@ -76,7 +76,7 @@ def lose_items(items):
         raise e
 
     for item in items:
-        item.current_status = 'missing'
+        item.current_status = CirculationItem.STATUS_MISSING
         item.save()
         create_event(item_id=item.id,
                      event=CirculationEvent.EVENT_ITEM_MISSING)

@@ -18,7 +18,7 @@
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 #}
 
-<h3>Current Loans</h3>
+<h3>Current Inter Library Requests</h3>
 <div class="row">
     <div class="col-md-12">
         <table class="table">
@@ -33,10 +33,7 @@
                 <td>{{lc.clc.item.record.title}}</td>
                 <td>{{lc.clc.start_date}}</td>
                 <td>{{lc.clc.end_date}}</td>
-                <td>
-                    <button type="button" class="btn btn-default btn-default current_hold_user_action" id="extension_button_{{lc.clc.id}}" data-clc_id="{{lc.clc.id}}" data-item_id="{{lc.clc.item.id}}" data-waitlist=false data-action="loan_extension" data-cal_data="{{lc.cal_data}}" data-cal_range="{{lc.cal_range}}">EXTEND LOAN</button>
-                    <button type="button" class="btn btn-default btn-default current_hold_user_action" data-item_id="{{lc.clc.item.id}}" data-action="lose_items">REPORT LOSS</button>
-                </td>
+                <td><button type="button" class="btn btn-default current_hold_user_action" id="cancel_button_{{lc.clc.id}}" data-ill_lc_id="{{lc.clc.id}}" data-action="cancel_ill_request">CANCEL REQUEST</button></td>
             </tr>
             {% endfor %}
         </table>

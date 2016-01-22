@@ -30,7 +30,8 @@ def _user_current_holds(sender, data):
             'result': [render_template('user/current_holds.html',
                                        holds=current_holds),
                        render_template('user/requested_holds.html',
-                                       holds=requested_holds)]}
+                                       holds=requested_holds),
+                       render_template('user/user_time_pick_modal.html')]}
 
 
 user_current_holds.connect(_user_current_holds)

@@ -135,10 +135,12 @@ def api_entity_search(entity, search):
 @blueprint.route('/api/entity/create', methods=['POST'])
 @extract_params
 def api_entity_create(entity, data):
-    from invenio.modules.circulation.signals import entity_name, apis
+    from invenio.modules.circulation.signals import entity_name, circ_apis
+
+    import ipdb; ipdb.set_trace()
 
     name = send_signal(entity_name, entity, None)[0]
-    api = send_signal(apis, entity, None)[0]
+    api = send_signal(circ_apis, entity, None)[0]
 
     entity = api.create(**data)
 
@@ -151,11 +153,11 @@ def api_entity_create(entity, data):
 @extract_params
 def api_entity_update(id, entity, data):
     from invenio.modules.circulation.signals import (
-            entity_class, entity_name, apis)
+            entity_class, entity_name, circ_apis)
 
     clazz = send_signal(entity_class, entity, None)[0]
     name = send_signal(entity_name, entity, None)[0]
-    api = send_signal(apis, entity, None)[0]
+    api = send_signal(circ_apis, entity, None)[0]
 
     api.update(clazz.get(id), **data)
 
@@ -167,11 +169,11 @@ def api_entity_update(id, entity, data):
 @extract_params
 def api_entity_delete(id, entity):
     from invenio.modules.circulation.signals import (
-            entity_class, entity_name, apis)
+            entity_class, entity_name, circ_apis)
 
     clazz = send_signal(entity_class, entity, None)[0]
     name = send_signal(entity_name, entity, None)[0]
-    api = send_signal(apis, entity, None)[0]
+    api = send_signal(circ_apis, entity, None)[0]
 
     api.delete(clazz.get(id))
 

@@ -74,8 +74,6 @@ function($, ch) {
     $('#circulation_search_result').on("click", ".entity_delete", function(event){
         var entity = $(event.target).data()['entity'];
         var id = $(event.target).data()['id'];
-        //var entity = event.target.id.split('_')[1];
-        //var id = event.target.id.split('_')[2];
         var from = $('#circulation_date_from').val();
         var to = $('#circulation_date_to').val();
         var waitlist = $('#circulation_option_waitlist').is(':checked');
@@ -91,18 +89,20 @@ function($, ch) {
 
     $('#circulation_actions').on("click", ".btn", function(event){
         var action = $(event.target).data()['action'];
-        //var action = event.target.id.split('_')[0];
-        var circulation_state = get_circulation_state();
-
+        var users = $.map($('.circulation_user'), function(val, i){
+            return $(val).data('id');
+        });
+        var items = $.map($('.circulation_item'), function(val, i){
+            return $(val).data('id');
+        });
         var from = $('#circulation_date_from').val();
         var to = $('#circulation_date_to').val();
         var waitlist = $('#circulation_option_waitlist').is(':checked');
         var delivery = $('#circulation_option_delivery').val();
 
-        var state_string = build_state_string(circulation_state, from, to, waitlist, delivery, '');
-        
-        var search_body = {action: action,
-                           circulation_state: state_string}
+        var data = {action: action, users: users, items: items,
+                    start_date: from, end_date: to,
+                    waitlist: waitlist, delivery: delivery};
 
         function success(data) {
             window.location.href = '/circulation/';
@@ -111,7 +111,7 @@ function($, ch) {
         $.ajax({
             type: "POST",
             url: "/circulation/api/circulation/run_action",
-            data: JSON.stringify(JSON.stringify(search_body)),
+            data: JSON.stringify(JSON.stringify(data)),
             success: success,
             contentType: 'application/json',
         });
@@ -217,61 +217,6 @@ function($, ch) {
 
         window.location.href = '/circulation/circulation/' + encodeURIComponent(state_string);
     });
-
-    /*
-    $('#validation_annotations').ready(function(){
-        var data = JSON.parse($('#validation_annotations').attr('data-validation'));
-
-        var elems = {date: '#circulation_dates',
-                     item: '#circulation_items'};
-        var mapping = {start_date: 'date', date_suggestion: 'date',
-                       items_status: 'item'}
-
-        var res = {};
-        for (var key in data) {
-            if (data.hasOwnProperty(key)) {
-                var values = data[key];
-                for (var i = 0; i < values.length; i++){
-                    var category = mapping[values[i][0]];
-                    var msg = values[i][1];
-                    if (elems.hasOwnProperty(category)){
-                        elem = elems[category];
-                        try {
-                            res[elem].push([key, msg]);
-                        } catch(err) {
-                            res[elem] = [[key, msg]];
-                        }
-                    }
-                }
-            }
-        }
-
-        for (var key in res) {
-            if (res.hasOwnProperty(key)) {
-                var values = res[key];
-                var content = [];
-                for (var i = 0; i < values.length; i++) {
-                    var val = values[i];
-                    var msg = val[0] + ': ' + val[1];
-                    content.push(msg);
-                }
-
-                $(key).popover({
-                    placement:'right',
-                    trigger:'manual',
-                    html:true,
-                    container:'body',
-                    content:content.join('<br>')}).popover('show');
-            }
-        }
-
-        $('#circulation_validation').popover({
-            placement:'bottom',
-            trigger:'hover',
-            html:true,
-            content:data.loan});
-    });
-    */
 
     $('#circulation_date_from').datepicker({ dateFormat: 'yy-mm-dd' });
     $('#circulation_date_to').datepicker({ dateFormat: 'yy-mm-dd' });

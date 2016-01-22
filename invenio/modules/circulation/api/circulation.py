@@ -289,21 +289,26 @@ def return_items(items):
     except ValidationExceptions as e:
         raise e
 
+    from invenio.modules.circulation.views.utils import send_signal
     from invenio.modules.circulation.signals import item_returned
 
     for item in items:
         item.current_status = CirculationItem.STATUS_ON_SHELF
         item.save()
-        #clc = CirculationLoanCycle.search(item=item,
-        #                                  current_status='on_loan')[0]
-        on_loan = CirculationLoanCycle.STATUS_ON_LOAN
-        query = 'item_id:{0} current_status:{1}'.format(item.id, on_loan)
-        clc = CirculationLoanCycle.search(query)[0]
-        clc.current_status = CirculationLoanCycle.STATUS_FINISHED
-        clc.save()
-        update_waitlist(clc)
-        create_event(user_id=clc.user.id, item_id=item.id,
-                     loan_cycle_id=clc.id,
-                     event=CirculationEvent.EVENT_CLC_FINISHED)
+        try:
+            on_loan = CirculationLoanCycle.STATUS_ON_LOAN
+            query = 'item_id:{0} current_status:{1}'.format(item.id, on_loan)
+            clc = CirculationLoanCycle.search(query)[0]
+            clc.current_status = CirculationLoanCycle.STATUS_FINISHED
+            clc.save()
+            update_waitlist(clc)
+            create_event(user_id=clc.user.id, item_id=item.id,
+                         loan_cycle_id=clc.id,
+                         event=CirculationEvent.EVENT_CLC_FINISHED)
 
-        item_returned.send(item.id)
+            send_signal(item_returned, None, item.id)
+        except IndexError:
+            # if the above fails, and no one returns on the signal, something
+            # went wrong
+            if not send_signal(item_returned, None, item.id):
+                raise

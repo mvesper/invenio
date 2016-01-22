@@ -21,5 +21,6 @@ from invenio.modules.circulation.receivers.misc import *
 from invenio.modules.circulation.receivers.circulation import *
 from invenio.modules.circulation.receivers.entity import *
 from invenio.modules.circulation.receivers.user import *
+from invenio.modules.circulation.receivers.record_action import *
 from invenio.modules.circulation.receivers.lists import *
 from invenio.modules.circulation.receivers.utils import *

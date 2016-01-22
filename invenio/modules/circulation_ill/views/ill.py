@@ -135,9 +135,13 @@ def perform_ill_action():
     actions = {'confirm': api.ill.confirm_ill_request,
                'decline': api.ill.decline_ill_request,
                'deliver': api.ill.deliver_ill,
-               'cancel': api.ill.cancel_ill_request}
+               'cancel': api.ill.cancel_ill_request,
+               'confirm_ill_extension': api.ill.confirm_ill_extension,
+               'decline_ill_extension': api.ill.decline_ill_extension}
     msgs = {'confirm': 'confirmed', 'decline': 'declined',
-            'deliver': 'delivered', 'cancel': 'canceled'}
+            'deliver': 'delivered', 'cancel': 'canceled',
+            'confirm_ill_extension': 'extended',
+            'decline_ill_extension': 'not extended'}
 
     data = json.loads(request.get_json())
     action = data['action']

@@ -113,7 +113,19 @@ class CirculationObject(object):
                     pass
 
         # Getting data for other modules
+        from invenio.modules.circulation.views.utils import (
+                send_signal, flatten)
         from invenio.modules.circulation.signals import get_entity
+
+        construction_data = flatten(send_signal(get_entity,
+                                                cls.__name__, None))
+        if construction_data:
+            for key in construction_data:
+                try:
+                    obj.__setattr__(key, data[key])
+                except KeyError:
+                    pass
+        '''
         try:
             construction_data = [key
                                  for keys in save_entity.send(cls.__name__)
@@ -127,6 +139,7 @@ class CirculationObject(object):
                     obj.__setattr__(key, data[key])
                 except KeyError:
                     pass
+        '''
         # End
 
         return obj
@@ -214,7 +227,20 @@ class CirculationObject(object):
                 db_data[key] = getattr(self, key)
 
         # Saving data for other modules
+        from invenio.modules.circulation.views.utils import (
+                send_signal, flatten)
         from invenio.modules.circulation.signals import save_entity
+
+        construction_data = flatten(send_signal(save_entity,
+                                                self.__class__.__name__, None))
+
+        if construction_data:
+            for key in construction_data:
+                try:
+                    db_data[key] = getattr(self, key)
+                except AttributeError:
+                    pass
+        '''
         try:
             construction_data = [key
                                  for keys in save_entity.send(cls.__name__)
@@ -228,6 +254,7 @@ class CirculationObject(object):
                     db_data[key] = getattr(self, key)
                 except AttributeError:
                     pass
+        '''
         # End
 
         self._data = jsonpickle.encode(db_data)
@@ -426,6 +453,7 @@ class CirculationItem(CirculationObject, db.Model):
     STATUS_ON_SHELF = 'on_shelf'
     STATUS_ON_LOAN = 'on_loan'
     STATUS_IN_PROCESS = 'in_process'
+    STATUS_MISSING = 'missing'
 
     _json_schema = {'type': 'object',
                     'title': 'Item',

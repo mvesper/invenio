@@ -5,6 +5,7 @@ import invenio.modules.circulation.api as api
 import invenio.modules.circulation.models as models
 
 from invenio.modules.circulation.views.utils import (datetime_serial,
+                                                     flatten,
                                                      _get_cal_heatmap_dates,
                                                      _get_cal_heatmap_range,
                                                      send_signal)
@@ -28,10 +29,10 @@ def users_current_holds(user_id):
 
     holds = send_signal(user_current_holds, 'user_current_holds', user_id)
 
-    return render_template('user/current_holds.html',
+    return render_template('user/user_overview.html',
                            editor_data=editor_data,
                            editor_schema=editor_schema,
-                           holds=holds)
+                           holds=flatten(holds))
 
 
 @blueprint.route('/user/<user_id>/record/<record_id>', methods=['GET'])

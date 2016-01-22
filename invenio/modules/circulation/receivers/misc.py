@@ -19,8 +19,6 @@
 
 """Signal receivers for workflows."""
 
-import json
-
 from invenio.base import signals
 from invenio.base.scripts.database import create, drop, recreate
 

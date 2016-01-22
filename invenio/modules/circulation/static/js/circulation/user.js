@@ -44,6 +44,7 @@ function($, ch) {
     }
 
     function perform_user_action(elem) {
+        /*
         var user_id = elem.attr('data-user_id');
         user_id = user_id === undefined? null : user_id;
         var item_id = elem.attr('data-item_id');
@@ -63,19 +64,20 @@ function($, ch) {
         var delivery = $('#circulation_option_delivery').val();
         delivery = delivery === undefined? null : delivery;
         
-        var search_body = get_data({'user_id': user_id,
-                                    'item_id': item_id,
-                                    'clc_id': clc_id,
+        var search_body = get_data({'users': [user_id],
+                                    'items': [item_id],
+                                    'clcs': [clc_id],
                                     'action': action,
                                     'start_date': start_date,
                                     'end_date': end_date,
                                     'waitlist': waitlist,
                                     'delivery': delivery})
 
+        */
         $.ajax({
             type: "POST",
-            url: "/circulation/api/user/run_action",
-            data: JSON.stringify(JSON.stringify(search_body)),
+            url: "/circulation/api/circulation/run_action",
+            data: JSON.stringify(JSON.stringify($(elem).data())),
             success: function(){window.location.reload();},
             contentType: 'application/json',
         });
@@ -86,18 +88,16 @@ function($, ch) {
         perform_user_action($(this));
     });
 
-    var _clc_id = null;
-    var _item_id = null;
+    var _data = {};
 
     $('.current_hold_user_action').on('click', function(event){
         var action = $(this).attr('data-action');
 
-        if (action == 'extension'){
-            var data = JSON.parse($(this).attr('data-cal_data'));
-            cal.update(data);
-            _clc_id = $(this).attr('data-clc_id');
-            _item_id = $(this).attr('data-item_id');
-            $('#myModal').modal();
+        if (action == 'loan_extension' || action == 'request_ill_extension'){
+            var _cal = JSON.parse($(this).attr('data-cal_data'));
+            cal.update(_cal);
+            _data = $(this).data();
+            $('#circulation_extension_time_pick').modal();
             return
         }
         perform_user_action($(this));
@@ -207,17 +207,16 @@ function($, ch) {
     });
 
     $('#circulation_extension_date').on('change', function(event){
-        var body = {'action': 'extension',
-                    'clc_id': _clc_id,
-                    'requested_end_date': $('#circulation_extension_date').val()}
+        var data = _data;
+        data['requested_end_date'] = $('#circulation_extension_date').val();
 
         function success(data){
-            var status = JSON.parse(data).status;
-            if (status == 200) {
+            var res = JSON.parse(data);
+            if (res === true) {
                 $('#circulation_extension_button').prop("disabled", false);
                 $('#circulation_extension_button').removeClass('btn-danger');
                 $('#circulation_extension_button').addClass('btn-success');
-            } else if (status == 400) {
+            } else {
                 $('#circulation_extension_button').prop("disabled", true);
                 $('#circulation_extension_button').removeClass('btn-success');
                 $('#circulation_extension_button').addClass('btn-danger');
@@ -226,24 +225,21 @@ function($, ch) {
 
         $.ajax({
             type: "POST",
-            url: "/circulation/api/user/try_action",
-            data: JSON.stringify(JSON.stringify(body)),
+            url: "/circulation/api/circulation/try_action",
+            data: JSON.stringify(JSON.stringify(data)),
             success: success,
             contentType: 'application/json',
         });
     });
 
     $('#circulation_extension_button').on('click', function(event){
-        var requested_end_date = $('#circulation_extension_date').val();
-        var search_body = get_data({'item_id': _item_id,
-                                    'clc_id': _clc_id,
-                                    'action': 'extension',
-                                    'requested_end_date': requested_end_date})
+        var data = _data;
+        data['requested_end_date'] = $('#circulation_extension_date').val();
 
         $.ajax({
             type: "POST",
-            url: "/circulation/api/user/run_action",
-            data: JSON.stringify(JSON.stringify(search_body)),
+            url: "/circulation/api/circulation/run_action",
+            data: JSON.stringify(JSON.stringify(data)),
             success: function(){window.location.reload();},
             contentType: 'application/json',
         });

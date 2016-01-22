@@ -35,9 +35,12 @@ def _entities_hub_search(sender, data):
                        'loan_rule': models.CirculationLoanRule,
                        'loan_rule_match': models.CirculationLoanRuleMatch}
 
-    return {'name': 'entity',
-            'result': (models_entities[sender].search(search),
-                       'entities/'+sender+'.html')}
+    entity = models_entities.get(sender)
+    res = None
+    if entity:
+        res = (entity.search(search), 'entities/' + sender + '.html')
+
+    return {'name': 'entity', 'result': res}
 
 
 def _entity(sender, data):
@@ -55,8 +58,10 @@ def _entity(sender, data):
                        'loan_rule': models.CirculationLoanRule,
                        'loan_rule_match': models.CirculationLoanRuleMatch}
 
-    return {'name': 'entity',
-            'result': models_entities[sender].get(id)}
+    entity = models_entities.get(sender)
+    res = entity.get(id) if entity else None
+
+    return {'name': 'entity', 'result': res}
 
 
 def _entity_suggestions(entity, data):
