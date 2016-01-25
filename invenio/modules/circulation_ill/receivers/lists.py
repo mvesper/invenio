@@ -4,7 +4,7 @@ from invenio.modules.circulation.signals import (lists_overview,
 
 def _lists_overview(sender, data):
     return {'name': 'ill_lists',
-            'priority': 1.0,
+            'priority': 0.75,
             'result': [('Requested Inter Library Loans', 'requested_ills'),
                        ('Confirmed Inter Library Loans', 'confirmed_ills'),
                        ('Inter Library Loans Extension', 'extension_ills')]}
