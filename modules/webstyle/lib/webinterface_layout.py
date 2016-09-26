@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 
-# This file is part of Invenio.
-# Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012 CERN.
-#
-# Invenio is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the
-# License, or (at your option) any later version.
-#
-# Invenio is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Invenio; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+## This file is part of Invenio.
+## Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012 CERN.
+##
+## Invenio is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License as
+## published by the Free Software Foundation; either version 2 of the
+## License, or (at your option) any later version.
+##
+## Invenio is distributed in the hope that it will be useful, but
+## WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Invenio; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 """
 Global organisation of the application's URLs.
@@ -28,10 +28,7 @@ from invenio.webinterface_handler import create_handler
 from invenio.errorlib import register_exception
 from invenio.webinterface_handler import WebInterfaceDirectory
 from invenio import webinterface_handler_config as apache
-from invenio.config import CFG_DEVEL_SITE, \
-                           CFG_OPENAIRE_SITE, \
-                           CFG_ACCESS_CONTROL_LEVEL_SITE, \
-                           CFG_CERN_SITE
+from invenio.config import CFG_DEVEL_SITE, CFG_OPENAIRE_SITE, CFG_ACCESS_CONTROL_LEVEL_SITE
 
 
 class WebInterfaceDisabledPages(WebInterfaceDirectory):
@@ -111,12 +108,6 @@ try:
 except:
     register_exception(alert_admin=True, subject='EMERGENCY')
     WebInterfaceUnAPIPages = WebInterfaceDumbPages
-
-try:
-    from invenio.websearch_webinterface import WebInterfaceYourSearchesPages
-except:
-    register_exception(alert_admin=True, subject='EMERGENCY')
-    WebInterfaceYourSearchesPages = WebInterfaceDumbPages
 
 try:
     from invenio.bibdocfile_webinterface import bibdocfile_legacy_getfile
@@ -247,11 +238,10 @@ except:
     WebInterfaceBatchUploaderPages = WebInterfaceDumbPages
 
 try:
-    from invenio.bibsword_webinterface import \
-         WebInterfaceSword
+    from invenio.bibsword_webinterface import WebInterfaceSwordClient
 except:
     register_exception(alert_admin=True, subject='EMERGENCY')
-    WebInterfaceSword = WebInterfaceDumbPages
+    WebInterfaceSwordClient = WebInterfaceDumbPages
 
 try:
     from invenio.ping_webinterface import \
@@ -311,58 +301,81 @@ except:
     WebInterfaceAuthorlistPages = WebInterfaceDumbPages
 
 try:
+    from invenio.webnews_webinterface import WebInterfaceWebNewsPages
+except:
+    register_exception(alert_admin=True, subject='EMERGENCY')
+    WebInterfaceWebNewsPages = WebInterfaceDumbPages
+
+try:
+    from invenio.bibmedia_webinterface import WebInterfaceAlbum
+except:
+    register_exception(alert_admin=True, subject='EMERGENCY')
+    WebInterfaceAlbum = WebInterfaceDumbPages
+
+try:
+    from invenio.mediaarchive_webinterface import WebInterfaceMediaArchiveErrorHandler
+except:
+    register_exception(alert_admin=True, subject='EMERGENCY')
+    WebInterfaceMediaArchiveErrorHandler = WebInterfaceDumbPages
+
+###CDS HACK###
+try:
+    from invenio.aleph_webinterface import WebInterfaceAlephPages
+except:
+    register_exception(alert_admin=True, subject='EMERGENCY')
+    WebInterfaceAlephPages = WebInterfaceDumbPages
+
+try:
+    from invenio.setlink_webinterface import WebInterfaceSetLinkPages
+except:
+    register_exception(alert_admin=True, subject='EMERGENCY')
+    WebInterfaceSetLinkPages = WebInterfaceDumbPages
+
+try:
+    from invenio.yellowreports_webinterface import WebInterfaceYellowReportsPages
+except:
+    register_exception(alert_admin=True, subject='EMERGENCY')
+    WebInterfaceYellowReportsPages = WebInterfaceDumbPages
+
+try:
+    from invenio.webimages_webinterface import WebInterfaceImagesPages
+except:
+    register_exception(alert_admin=True, subject='EMERGENCY')
+    WebInterfaceImagesPages = WebInterfaceDumbPages
+
+try:
+    from invenio.embedvideo_webinterface import WebInterfaceEmbedVideo
+except:
+    register_exception(alert_admin=True, subject='EMERGENCE')
+    WebInterfaceEmbedVideo = WebInterfaceDumbPages
+
+try:
+    from invenio.webapi_webinterface import WebInterfaceAPIPages
+except:
+    register_exception(alert_admin=True, subject='EMERGENCE')
+    WebInterfaceAPIPages = WebInterfaceDumbPages
+
+try:
+    from invenio.webcomment_webinterface import WebInterfaceYourCommentsPages
+except:
+    register_exception(alert_admin=True, subject='EMERGENCY')
+    WebInterfaceYourAlertsPages = WebInterfaceDumbPages
+
+try:
     from invenio.bibencode_youtube import WebInterfaceYoutube
 except:
     register_exception(alert_admin=True, subject='EMERGENCY')
     WebInterfaceYoutube = WebInterfaceDumbPages
 
 try:
-    from invenio.webnews_webinterface import WebInterfaceWebNewsPages
+    from invenio.feedback_webinterface import WebInterfaceFeedback
 except:
     register_exception(alert_admin=True, subject='EMERGENCY')
-    WebInterfaceWebNewsPages = WebInterfaceDumbPages
+    WebInterfaceFeedback = WebInterfaceDumbPages
 
+cds_exports = ['cdslib', 'setlink', 'images', 'video', 'api', 'yellowrep']
+###END CDS HACK###
 
-if CFG_CERN_SITE:
-    try:
-        from invenio.aleph_webinterface import WebInterfaceAlephPages
-    except:
-        register_exception(alert_admin=True, subject='EMERGENCY')
-        WebInterfaceAlephPages = WebInterfaceDumbPages
-
-    try:
-        from invenio.setlink_webinterface import WebInterfaceSetLinkPages
-    except:
-        register_exception(alert_admin=True, subject='EMERGENCY')
-        WebInterfaceSetLinkPages = WebInterfaceDumbPages
-
-    try:
-        from invenio.yellowreports_webinterface import WebInterfaceYellowReportsPages
-    except:
-        register_exception(alert_admin=True, subject='EMERGENCY')
-        WebInterfaceYellowReportsPages = WebInterfaceDumbPages
-
-    try:
-        from invenio.webimages_webinterface import WebInterfaceImagesPages
-    except:
-        register_exception(alert_admin=True, subject='EMERGENCY')
-        WebInterfaceImagesPages = WebInterfaceDumbPages
-
-    try:
-        from invenio.embedvideo_webinterface import WebInterfaceEmbedVideo
-    except:
-        register_exception(alert_admin=True, subject='EMERGENCE')
-        WebInterfaceEmbedVideo = WebInterfaceDumbPages
-
-    try:
-        from invenio.webapi_webinterface import WebInterfaceAPIPages
-    except:
-        register_exception(alert_admin=True, subject='EMERGENCE')
-        WebInterfaceAPIPages = WebInterfaceDumbPages
-
-    cds_exports = ['cdslib', 'setlink', 'images', 'video', 'api', 'yellowrep']
-else:
-    cds_exports = []
 
 if CFG_OPENAIRE_SITE:
     try:
@@ -408,7 +421,6 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
                    'yourcomments',
                    'ill',
                    'yourgroups',
-                   'yoursearches',
                    'yourtickets',
                    'comments',
                    'error',
@@ -423,7 +435,7 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
                    'exporter',
                    'kb',
                    'batchuploader',
-                   'bibsword',
+                   'sword_client',
                    'ping',
                    'admin2',
                    'linkbacks',
@@ -433,8 +445,11 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
                    'goto',
                    'info',
                    'authorlist',
-                   'youtube',
                    'news',
+                   'media',
+                   'mediaarchive',
+                   'youtube',
+                   'feedback',
                ] + test_exports + openaire_exports + cds_exports
 
     def __init__(self):
@@ -453,7 +468,6 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
         yourloans = WebInterfaceDisabledPages()
         ill = WebInterfaceDisabledPages()
         yourgroups = WebInterfaceDisabledPages()
-        yoursearches = WebInterfaceDisabledPages()
         yourtickets = WebInterfaceDisabledPages()
         comments = WebInterfaceDisabledPages()
         error = WebInterfaceErrorPages()
@@ -468,7 +482,7 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
         kb = WebInterfaceBibKnowledgePages()
         admin2 = WebInterfaceDisabledPages()
         batchuploader = WebInterfaceDisabledPages()
-        bibsword = WebInterfaceDisabledPages()
+        sword_client = WebInterfaceDisabledPages()
         ping = WebInterfacePingPages()
         linkbacks = WebInterfaceDisabledPages()
         author = WebInterfaceDisabledPages()
@@ -477,15 +491,19 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
         yourcomments = WebInterfaceDisabledPages()
         goto = WebInterfaceDisabledPages()
         authorlist = WebInterfaceDisabledPages()
-        youtube = WebInterfaceYoutube()
         news = WebInterfaceDisabledPages()
-        if CFG_CERN_SITE:
-            cdslib = WebInterfaceDisabledPages()
-            setlink = WebInterfaceDisabledPages()
-            yellowrep = WebInterfaceYellowReportsPages()
-            images = WebInterfaceImagesPages()
-            video = WebInterfaceEmbedVideo()
-            api = WebInterfaceAPIPages()
+        media = WebInterfaceAlbum()
+        mediaarchive =  WebInterfaceMediaArchiveErrorHandler()
+        youtube = WebInterfaceYoutube()
+        feedback = WebInterfaceFeedback()
+        ###CDS HACK
+        cdslib = WebInterfaceAlephPages()
+        setlink = WebInterfaceSetLinkPages()
+        yellowrep = WebInterfaceYellowReportsPages()
+        images = WebInterfaceImagesPages()
+        video = WebInterfaceEmbedVideo()
+        api = WebInterfaceAPIPages()
+         ##END CDS HACK
     else:
         submit = WebInterfaceSubmitPages()
         youraccount = WebInterfaceYourAccountPages()
@@ -495,7 +513,6 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
         yourloans = WebInterfaceYourLoansPages()
         ill = WebInterfaceILLPages()
         yourgroups = WebInterfaceYourGroupsPages()
-        yoursearches = WebInterfaceYourSearchesPages()
         yourtickets = WebInterfaceYourTicketsPages()
         comments = WebInterfaceCommentsPages()
         error = WebInterfaceErrorPages()
@@ -510,7 +527,7 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
         kb = WebInterfaceBibKnowledgePages()
         admin2 = WebInterfaceAdminPages()
         batchuploader = WebInterfaceBatchUploaderPages()
-        bibsword = WebInterfaceSword()
+        sword_client = WebInterfaceSwordClient()
         ping = WebInterfacePingPages()
         linkbacks = WebInterfaceRecentLinkbacksPages()
         author = WebInterfaceAuthor()
@@ -519,15 +536,20 @@ class WebInterfaceInvenio(WebInterfaceSearchInterfacePages):
         yourcomments = WebInterfaceYourCommentsPages()
         goto = WebInterfaceGotoPages()
         authorlist = WebInterfaceAuthorlistPages()
-        youtube = WebInterfaceYoutube()
         news = WebInterfaceWebNewsPages()
-        if CFG_CERN_SITE:
-            cdslib = WebInterfaceAlephPages()
-            setlink = WebInterfaceSetLinkPages()
-            yellowrep = WebInterfaceYellowReportsPages()
-            images = WebInterfaceImagesPages()
-            video = WebInterfaceEmbedVideo()
-            api = WebInterfaceAPIPages()
+        media = WebInterfaceAlbum()
+        mediaarchive =  WebInterfaceMediaArchiveErrorHandler()
+        youtube = WebInterfaceYoutube()
+        feedback = WebInterfaceFeedback()
+        ###CDS HACK
+        cdslib = WebInterfaceAlephPages()
+        setlink = WebInterfaceSetLinkPages()
+        yellowrep = WebInterfaceYellowReportsPages()
+        images = WebInterfaceImagesPages()
+        video = WebInterfaceEmbedVideo()
+        api = WebInterfaceAPIPages()
+        ##END CDS HACK
+
 
 # This creates the 'handler' function, which will be invoked directly
 # by mod_python.

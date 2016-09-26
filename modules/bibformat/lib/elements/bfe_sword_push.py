@@ -38,14 +38,12 @@ def format_element(bfo, remote_server_id, link_label="Push via Sword"):
         return ""
 
     sword_arguments = {'ln': bfo.lang,
-                       'recid': bfo.recID}
+                       'record_id': bfo.recID}
 
     if remote_server_id:
-        sword_arguments['id_remote_server'] = remote_server_id
-    else:
-        sword_arguments['status'] = 'select_server'
+        sword_arguments['server_id'] = remote_server_id
 
-    return create_html_link(CFG_BASE_URL + '/bibsword',
+    return create_html_link(CFG_BASE_URL + '/sword_client/submit',
                             sword_arguments,
                             link_label)
 

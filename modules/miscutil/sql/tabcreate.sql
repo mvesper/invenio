@@ -5021,6 +5021,39 @@ CREATE TABLE `pidLOG` (
   CONSTRAINT `pidlog_ibfk_1` FOREIGN KEY (`id_pid`) REFERENCES `pidSTORE` (`id`)
 ) ENGINE=MYISAM;
 
+-- tables for bibsword
+CREATE TABLE `swrCLIENTTEMPSUBMISSION` (
+  `id` varchar(128) NOT NULL,
+  `object` longblob NOT NULL,
+  `last_updated` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`id`)
+) ENGINE=MYISAM;
+
+CREATE TABLE `swrCLIENTSUBMISSION` (
+  `id_user` int(15) unsigned NOT NULL,
+  `id_record` mediumint(8) unsigned NOT NULL,
+  `id_server` int(11) unsigned NOT NULL,
+  `url_alternate` varchar(256) NOT NULL DEFAULT '',
+  `url_edit` varchar(256) NOT NULL DEFAULT '',
+  `status` varchar(256) NOT NULL DEFAULT '',
+  `submitted` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `last_updated` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`id_record`,`id_server`)
+) ENGINE=MYISAM;
+
+CREATE TABLE `swrCLIENTSERVER` (
+ `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+ `name` varchar(64) NOT NULL,
+ `engine` varchar(64) NOT NULL,
+ `username` varchar(64) NOT NULL,
+ `password` varchar(64) NOT NULL,
+ `email` varchar(64) NOT NULL,
+ `service_document_parsed` longblob,
+ `update_frequency` varchar(16) NOT NULL,
+ `last_updated` timestamp DEFAULT 0,
+ PRIMARY KEY (`id`)
+) ENGINE=MYISAM;
+
 -- maint-1.1 upgrade recipes:
 INSERT INTO upgrade (upgrade, applied) VALUES ('invenio_release_1_1_0',NOW());
 INSERT INTO upgrade (upgrade, applied) VALUES ('invenio_2012_10_31_tablesorter_location',NOW());
